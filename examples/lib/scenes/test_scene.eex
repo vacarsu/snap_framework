@@ -1,0 +1,16 @@
+<%= 
+    @graph
+    |> @components.button("test", id: :test_btn, translate: {200, 20})
+    |> @components.dropdown({
+            @state.dropdown_opts,
+            @state.dropdown_value
+        },
+        id: :dropdown,
+        translate: {20, 20}
+    )
+    |> @primitives.text(
+        "selected value #{@state.dropdown_value}",
+        id: :dropdown_value_text,
+        translate: {20, 80}
+    )
+%>
