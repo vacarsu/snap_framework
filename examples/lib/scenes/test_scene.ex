@@ -14,28 +14,31 @@ defmodule Examples.Scene.TestScene do
       ],
       test_clicked: false,
       dropdown_value: :dashboard,
+      button_text: "test",
       text_value: "selected value <%= @state.dropdown_value %>"
     }
 
-  use_effect(
-    [:text_value, :dropdown_value],
-    :dropdown_value_text,
-    &Primitives.text/3
-  )
+  use_effect [on_changed: [:text_value]], [
+    modify: [
+      dropdown_value_text: {&text/3, :text_value}
+    ]
+  ]
 
-  use_effect(
-    :test_clicked,
-    :dropdown_value_text,
-    &Primitives.text/3
-  )
+  use_effect [on_changed: [:dropdown_value]], [
+    add: [{&button/3, :button_text, id: :test_btn, translate: {200, 20}}],
+  ]
+
+  use_effect [on_click: [:test_btn]], :noreply, [
+    set: [button_text: "button clicked", text_value: "button clicked"],
+    delete: [:test_btn]
+  ]
 
   def process_event({:value_changed, :dropdown, value}, _, state) do
-    state = %{state | dropdown_value: value, text_value: "selected value #{value}"}
-    {:noreply, state}
-  end
-
-  def process_event({:click, :test_btn}, _, state) do
-    state = %{state | test_clicked: true, text_value: "button clicked"}
+    state = %{
+      state |
+      dropdown_value: value,
+      text_value: "selected value #{value}"
+    }
     {:noreply, state}
   end
 end

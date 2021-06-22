@@ -1,4 +1,6 @@
 defmodule SnapFramework.Macros do
+  alias Scenic.Graph
+
   defmacro scene_handlers do
     quote do
       def handle_info(msg, state) do
@@ -41,6 +43,45 @@ defmodule SnapFramework.Macros do
         Enum.reduce(added, state, fn {key, _value}, acc ->
           acc |> change(key)
         end)
+      end
+    end
+  end
+
+  defmacro effect_handlers() do
+    quote do
+      defp change(state, key) do
+        effect = Map.get(@effects_registry, key)
+
+        if effect do
+          Enum.reduce(effect, state, fn {e_key, list}, acc ->
+            case e_key do
+              :add -> Enum.reduce(list, acc, fn item, s_acc -> add(s_acc, item) end)
+              :modify -> Enum.reduce(list, acc, fn item, s_acc -> modify(s_acc, item) end)
+              :delete -> Enum.reduce(list, acc, fn item, s_acc -> delete(s_acc, item) end)
+              _ -> acc
+            end
+          end)
+        else
+          state
+        end
+      end
+
+      defp add(state, {cmp_fun, state_key, opts}) do
+        state.graph
+        |> cmp_fun.(state[state_key], opts)
+        |>(&%{state | graph: &1}).()
+      end
+
+      defp modify(state, {cmp_id, {cmp_fun, state_key}}) do
+        state.graph
+        |> Graph.modify(cmp_id, fn g -> cmp_fun.(g, state[state_key], []) end)
+        |>(&%{state | graph: &1}).()
+      end
+
+      defp delete(state, cmp_id) do
+        state.graph
+        |> Graph.delete(cmp_id)
+        |>(&%{state | graph: &1}).()
       end
     end
   end
