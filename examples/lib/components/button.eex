@@ -1,0 +1,5 @@
+<%= 
+    graph font_size: 20
+    primitive :rounded_rectangle, {100, 50, 4}, fill: :blue
+    primitive :text, @state.data
+%>

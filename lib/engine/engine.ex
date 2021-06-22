@@ -4,6 +4,8 @@ defmodule SnapFramework.Engine do
   """
 
   @behaviour EEx.Engine
+  alias Scenic.Graph
+  require Logger
 
   def encode_to_iodata!({:safe, body}), do: body
   def encode_to_iodata!(body) when is_binary(body), do: body
@@ -11,7 +13,6 @@ defmodule SnapFramework.Engine do
   @doc false
   def init(_opts) do
     %{
-      start: [],
       iodata: [],
       dynamic: [],
       vars_count: 0
@@ -20,7 +21,7 @@ defmodule SnapFramework.Engine do
 
   @doc false
   def handle_begin(state) do
-    %{state | start: [], iodata: [], dynamic: []}
+    %{state | iodata: [], dynamic: []}
   end
 
   @doc false
@@ -68,7 +69,11 @@ defmodule SnapFramework.Engine do
   ## Traversal
 
   defp traverse(expr) do
-    Macro.prewalk(expr, &handle_assign/1)
+    expr
+    |> Macro.prewalk(&handle_graph/1)
+    |> Macro.prewalk(&handle_assign/1)
+    |> Macro.prewalk(&handle_component/1)
+    |> Macro.prewalk(&handle_primitive/1)
   end
 
   defp handle_assign({:@, meta, [{name, _, atom}]}) when is_atom(name) and is_atom(atom) do
@@ -79,6 +84,47 @@ defmodule SnapFramework.Engine do
 
   defp handle_assign(arg), do: arg
 
+  defp handle_graph({:graph, meta, [opts]}) do
+    graph_val = Macro.var(:graph_val, __MODULE__)
+    quote line: meta[:line] || 0 do
+      unquote(graph_val) = Graph.build(unquote(opts))
+    end
+  end
+
+  defp handle_graph(arg), do: arg
+
+  defp handle_component({:component, meta, [name, data, opts]}) do
+    graph_val = Macro.var(:graph_val, __MODULE__)
+    quote line: meta[:line] || 0 do
+      unquote(graph_val) = unquote(name)(unquote(graph_val), unquote(data), unquote(opts))
+    end
+  end
+
+  defp handle_component({:component, meta, [name, data]}) do
+    graph_val = Macro.var(:graph_val, __MODULE__)
+    quote line: meta[:line] || 0 do
+      unquote(graph_val) = unquote(name)(unquote(graph_val), unquote(data))
+    end
+  end
+
+  defp handle_component(arg), do: arg
+
+  defp handle_primitive({:primitive, meta, [name, data, opts]}) do
+    graph_val = Macro.var(:graph_val, __MODULE__)
+    quote line: meta[:line] || 0 do
+      unquote(graph_val) = unquote(name)(unquote(graph_val), unquote(data), unquote(opts))
+    end
+  end
+
+  defp handle_primitive({:primitive, meta, [name, data]}) do
+    graph_val = Macro.var(:graph_val, __MODULE__)
+    quote line: meta[:line] || 0 do
+      unquote(graph_val) = unquote(name)(unquote(graph_val), unquote(data))
+    end
+  end
+
+  defp handle_primitive(arg), do: arg
+
   @doc false
   def fetch_assign!(assigns, key) do
     case Access.fetch(assigns, key) do
@@ -86,8 +132,7 @@ defmodule SnapFramework.Engine do
         val
 
       :error ->
-        deprecated_fallback(key, assigns) ||
-          raise ArgumentError, """
+        raise ArgumentError, """
           assign @#{key} not available in eex template.
 
           Please make sure all proper assigns have been set. If this
@@ -98,26 +143,4 @@ defmodule SnapFramework.Engine do
           """
     end
   end
-
-  defp deprecated_fallback(:view_module, %{conn: %{private: %{phoenix_view: view_module}}}) do
-    IO.warn """
-    using @view_module is deprecated, please use view_module(conn) instead.
-
-    If using render(@view_module, @view_template, assigns), replace it by @inner_content.
-    """
-
-    view_module
-  end
-
-  defp deprecated_fallback(:view_template, %{conn: %{private: %{phoenix_template: view_template}}}) do
-    IO.warn """
-    using @view_template is deprecated, please use view_template(conn) instead.
-
-    If using render(@view_module, @view_template, assigns), replace it by @inner_content.
-    """
-
-    view_template
-  end
-
-  defp deprecated_fallback(_, _), do: nil
 end
