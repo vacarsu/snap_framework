@@ -12,6 +12,7 @@ defmodule SnapFramework.Component do
         opts: unquote(opts)
 
       import SnapFramework.Component
+      alias Scenic.Primitives
       require SnapFramework.Macros
       require EEx
       require Logger
@@ -72,6 +73,7 @@ defmodule SnapFramework.Component do
           |> Map.put_new(:module, unquote(caller))
           |> Map.put_new(:data, data)
           |> Map.put_new(:opts, opts)
+          |> setup()
         [init_graph] = render(state: state)
         state =
           state

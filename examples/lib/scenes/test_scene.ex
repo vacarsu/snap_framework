@@ -34,6 +34,11 @@ defmodule Examples.Scene.TestScene do
     delete: [:test_btn]
   ]
 
+  def setup(state) do
+    Logger.debug("scene setup #{inspect(state)}")
+    state
+  end
+
   def process_event({:value_changed, :dropdown, value}, _, state) do
     state = %{
       state |

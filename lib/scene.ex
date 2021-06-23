@@ -1,8 +1,18 @@
 defmodule SnapFramework.Scene do
   require Logger
 
+  @optional_callbacks setup: 1
+
+  @callback process_call(msg :: map, from :: GenServer.from, state :: map) :: {term :: atom, state :: map}
+  @callback process_info(msg :: any, state :: map) :: {term :: atom, state :: map}
+  @callback process_cast(msg :: any, state :: map) :: {term :: atom, state:: map}
+  @callback process_input(input :: any, context :: any, state :: map) :: {term :: atom, state :: map}
+  @callback process_event(event :: any, from_pid :: any, state :: map) :: {term :: atom, state :: map}
+  @callback setup(state :: map()) :: map()
+
   defmacro __using__(name: name, template: template, state: state) do
     quote do
+      @behaviour SnapFramework.Scene
       use Scenic.Scene
       alias Scenic.Graph
       alias Scenic.Components
@@ -26,17 +36,20 @@ defmodule SnapFramework.Scene do
       def process_cast(msg, state), do: {:noreply, state}
       def process_input(input, context, state), do: {:noreply, state}
       def process_event(event, from_pid, state), do: {:cont, state}
+      def setup(state), do: state
 
       defoverridable process_call: 3,
                      process_info: 2,
                      process_cast: 2,
                      process_input: 3,
-                     process_event: 3
+                     process_event: 3,
+                     setup: 1
     end
   end
 
   defmacro __using__([name: name, template: template, state: state, opts: opts]) do
     quote do
+      @behaviour SnapFramework.Scene
       use Scenic.Component, unquote(opts)
       alias Scenic.Graph
       alias Scenic.Components
@@ -58,12 +71,14 @@ defmodule SnapFramework.Scene do
       def process_cast(msg, state), do: {:noreply, state}
       def process_input(input, context, state), do: {:noreply, state}
       def process_event(event, from_pid, state), do: {:cont, state}
+      def setup(state), do: state
 
       defoverridable process_call: 3,
                      process_info: 2,
                      process_cast: 2,
                      process_input: 3,
-                     process_event: 3
+                     process_event: 3,
+                     setup: 1
     end
   end
 
@@ -134,9 +149,11 @@ defmodule SnapFramework.Scene do
       EEx.function_from_file(:def, :render, @template, [:assigns], engine: SnapFramework.Engine)
 
       def init(_, _) do
-        [init_graph] = render(state: @state)
+        state = setup(@state)
+        [init_graph] = render(state: state)
+        Logger.debug(inspect init_graph)
         state =
-          @state
+          state
           |> Map.put_new(:module, unquote(caller))
           |> Map.put_new(:graph, init_graph)
         {:ok, state, push: state.graph}
