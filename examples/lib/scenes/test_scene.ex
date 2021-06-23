@@ -1,6 +1,7 @@
 defmodule Examples.Scene.TestScene do
-  import Scenic.Components, only: [dropdown: 3, button: 3]
+  import Scenic.Components, only: [dropdown: 3]
   import Scenic.Primitives, only: [text: 3]
+  import Examples.Component.Button, only: [button: 3]
   require Logger
 
   use SnapFramework.Scene,

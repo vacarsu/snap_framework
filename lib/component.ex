@@ -3,46 +3,22 @@ defmodule SnapFramework.Component do
   alias Scenic.Primitive
   alias Scenic.Primitives
 
-  defmacro __using__(name: name, template: template, state: state) do
+  defmacro __using__([name: name, template: template, state: state, opts: opts]) do
     quote do
-      use Scenic.Component
-      alias Scenic.Graph
-      alias Scenic.Components
-      alias Scenic.Primitive
-      alias Scenic.Primitives
+      use SnapFramework.Scene,
+        name: unquote(name),
+        template: unquote(template),
+        state: unquote(state),
+        opts: unquote(opts)
+
       import SnapFramework.Component
       require SnapFramework.Macros
       require EEx
       require Logger
 
-      @name unquote(name)
-      @using_effects false
-      @template unquote(template)
-      @components Components
-      @primitives Primitives
-      @state unquote(state)
-
       @before_compile SnapFramework.Component
-    end
-  end
 
-  defmacro __before_compile__(_env) do
-    caller = __CALLER__.module
-    quote location: :keep do
-      @using_effects false
-      EEx.function_from_file(:def, :render, @template, [:assigns], engine: SnapFramework.Engine)
-
-      def init(data, _) do
-        state =
-          @state
-          |> Map.put_new(:module, unquote(caller))
-          |> Map.put_new(:data, data)
-        [init_graph] = render(state: state)
-        state =
-          state
-          |> Map.put_new(:graph, init_graph)
-        {:ok, state, push: state.graph}
-      end
+      SnapFramework.Macros.input_handler()
     end
   end
 
@@ -85,43 +61,25 @@ defmodule SnapFramework.Component do
     end
   end
 
-  defmacro use_effect(ks, cmp_id, cmp_fun) when is_list(ks) do
-    quote location: :keep, bind_quoted: [ks: ks, cmp_id: cmp_id, cmp_fun: cmp_fun] do
-      if not @using_effects do
-        @using_effects true
-        SnapFramework.Macros.scene_handlers()
-      end
-
-      Enum.map(ks, fn k ->
-        def unquote(k)(state) do
-          state.graph
-          |> Graph.modify(unquote(cmp_id), fn g -> unquote(cmp_fun).(g, state[unquote(k)], []) end)
-          |>(&%{state | graph: &1}).()
-        end
-
-        def change(state, k) do
-          unquote(k)(state)
-        end
-      end)
-    end
-  end
-
-  defmacro use_effect(k, cmp_id, cmp_fun) when is_atom(k) do
+  defmacro __before_compile__(_env) do
+    caller = __CALLER__.module
     quote location: :keep do
-      if not @using_effects do
-        @using_effects true
-        SnapFramework.Macros.scene_handlers()
+      EEx.function_from_file(:def, :render, @template, [:assigns], engine: SnapFramework.Engine)
+
+      def init(data, opts \\ []) do
+        state =
+          @state
+          |> Map.put_new(:module, unquote(caller))
+          |> Map.put_new(:data, data)
+          |> Map.put_new(:opts, opts)
+        [init_graph] = render(state: state)
+        state =
+          state
+          |> Map.put_new(:graph, init_graph)
+        {:ok, state, push: state.graph}
       end
 
-      def unquote(k)(state) do
-        state.graph
-        |> Graph.modify(unquote(cmp_id), fn g -> unquote(cmp_fun).(g, state[unquote(k)], []) end)
-        |>(&%{state | graph: &1}).()
-      end
-
-      def change(state, k) do
-        unquote(k)(state)
-      end
+      SnapFramework.Macros.effect_handlers()
     end
   end
 end

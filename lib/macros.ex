@@ -1,6 +1,17 @@
 defmodule SnapFramework.Macros do
   alias Scenic.Graph
 
+  defmacro input_handler do
+    quote do
+      def handle_input(event, context, state) do
+        {response_type, new_state} = state.module.process_input(event, context, state)
+        diff = diff_state(state, new_state)
+        new_state = process_effects(new_state, diff)
+        {response_type, new_state, push: new_state.graph}
+      end
+    end
+  end
+
   defmacro scene_handlers do
     quote do
       def handle_info(msg, state) do
@@ -30,7 +41,11 @@ defmodule SnapFramework.Macros do
         new_state = process_effects(new_state, diff)
         {response_type, new_state, push: new_state.graph}
       end
+    end
+  end
 
+  defmacro effect_handlers() do
+    quote do
       defp diff_state(old_state, new_state) do
         MapDiff.diff(old_state, new_state)
       end
@@ -44,11 +59,7 @@ defmodule SnapFramework.Macros do
           acc |> change(key)
         end)
       end
-    end
-  end
 
-  defmacro effect_handlers() do
-    quote do
       defp change(state, key) do
         effect = Map.get(@effects_registry, key)
 

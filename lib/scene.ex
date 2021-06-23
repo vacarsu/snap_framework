@@ -14,19 +14,66 @@ defmodule SnapFramework.Scene do
 
       @name unquote(name)
       @template unquote(template)
-      @components Components
-      @primitives Primitives
       @state unquote(state)
 
       @using_effects false
       @effects_registry %{}
 
       @before_compile SnapFramework.Scene
+
+      def process_call(msg, from, state), do: {:noreply, state}
+      def process_info(msg, state), do: {:noreply, state}
+      def process_cast(msg, state), do: {:noreply, state}
+      def process_input(input, context, state), do: {:noreply, state}
+      def process_event(event, from_pid, state), do: {:cont, state}
+
+      defoverridable process_call: 3,
+                     process_info: 2,
+                     process_cast: 2,
+                     process_input: 3,
+                     process_event: 3
+    end
+  end
+
+  defmacro __using__([name: name, template: template, state: state, opts: opts]) do
+    quote do
+      use Scenic.Component, unquote(opts)
+      alias Scenic.Graph
+      alias Scenic.Components
+      alias Scenic.Primitives
+      import SnapFramework.Scene
+      require SnapFramework.Macros
+      require EEx
+      require Logger
+
+      @name unquote(name)
+      @template unquote(template)
+      @state unquote(state)
+
+      @using_effects false
+      @effects_registry %{}
+
+      def process_call(msg, from, state), do: {:noreply, state}
+      def process_info(msg, state), do: {:noreply, state}
+      def process_cast(msg, state), do: {:noreply, state}
+      def process_input(input, context, state), do: {:noreply, state}
+      def process_event(event, from_pid, state), do: {:cont, state}
+
+      defoverridable process_call: 3,
+                     process_info: 2,
+                     process_cast: 2,
+                     process_input: 3,
+                     process_event: 3
     end
   end
 
   defmacro use_effect([on_click: ids], term, effects) when is_list(ids) do
     quote location: :keep, bind_quoted: [ids: ids, term: term, effects: effects] do
+      if not @using_effects do
+        @using_effects true
+        SnapFramework.Macros.scene_handlers()
+      end
+
       for cmp_id <- ids do
         def process_event({:click, unquote(cmp_id)} = event, _from_pid, state) do
           state =
@@ -57,6 +104,11 @@ defmodule SnapFramework.Scene do
 
   defmacro use_effect([on_changed: ks], actions) do
     quote location: :keep, bind_quoted: [ks: ks, actions: actions] do
+      if not @using_effects do
+        @using_effects true
+        SnapFramework.Macros.scene_handlers()
+      end
+
       @effects_registry Enum.reduce(ks, @effects_registry, fn k, acc ->
         if Map.has_key?(acc, k) do
           actions = Enum.reduce(actions, %{}, fn {a_key, a_list}, a_acc ->
@@ -73,11 +125,6 @@ defmodule SnapFramework.Scene do
           Map.put_new(acc, k, actions)
         end
       end)
-
-      if not @using_effects do
-        SnapFramework.Macros.scene_handlers()
-        @using_effects true
-      end
     end
   end
 
@@ -95,9 +142,7 @@ defmodule SnapFramework.Scene do
         {:ok, state, push: state.graph}
       end
 
-      if @using_effects do
-        SnapFramework.Macros.effect_handlers()
-      end
+      SnapFramework.Macros.effect_handlers()
     end
   end
 end
