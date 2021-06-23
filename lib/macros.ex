@@ -1,5 +1,6 @@
 defmodule SnapFramework.Macros do
   alias Scenic.Graph
+  alias Scenic.Primitive
 
   defmacro input_handler do
     quote do
@@ -83,9 +84,21 @@ defmodule SnapFramework.Macros do
         |>(&%{state | graph: &1}).()
       end
 
-      defp modify(state, {cmp_id, {cmp_fun, state_key}}) do
+      defp modify(state, {cmp_id, {cmp_fun, state_key}}) when is_atom(state_key) do
         state.graph
         |> Graph.modify(cmp_id, fn g -> cmp_fun.(g, state[state_key], []) end)
+        |>(&%{state | graph: &1}).()
+      end
+
+      defp modify(state, {cmp_id, {cmp_fun, state_key, opts}}) when is_atom(state_key) and is_list(opts) do
+        state.graph
+        |> Graph.modify(cmp_id, fn g -> cmp_fun.(g, state[state_key], opts) end)
+        |>(&%{state | graph: &1}).()
+      end
+
+      defp modify(state, {cmp_id, {cmp_fun, opts}}) when is_list(opts) do
+        state.graph
+        |> Graph.modify(cmp_id, fn g -> Primitive.merge_opts(g, opts) end)
         |>(&%{state | graph: &1}).()
       end
 
