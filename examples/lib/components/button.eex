@@ -1,5 +1,10 @@
-<%= 
+<%=
     graph font_size: 20
+
     primitive :rounded_rectangle, {100, 50, 4}, id: :btn, fill: :blue
-    primitive :text, @state.data, translate: {10, 50/2}
+
+    component :button_icon, [] do
+        slot :icon, :text, "test"
+        slot :text, :text, "test"
+    end
 %>

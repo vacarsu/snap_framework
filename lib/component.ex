@@ -2,6 +2,7 @@ defmodule SnapFramework.Component do
   alias Scenic.Graph
   alias Scenic.Primitive
   alias Scenic.Primitives
+  require Logger
 
   defmacro __using__([name: name, template: template, state: state, opts: opts]) do
     quote do
@@ -62,22 +63,25 @@ defmodule SnapFramework.Component do
     end
   end
 
-  defmacro __before_compile__(_env) do
-    caller = __CALLER__.module
+  defmacro __before_compile__(env) do
+    caller = __CALLER__
+    template = Module.get_attribute(env.module, :template)
+    state = Module.get_attribute(env.module, :state)
+    IO.puts(inspect(state))
     quote location: :keep do
-      EEx.function_from_file(:def, :render, @template, [:assigns], engine: SnapFramework.Engine)
+      # EEx.function_from_file(:def, :render, @template, [:assigns], engine: SnapFramework.Engine)
 
       def init(data, opts \\ []) do
         state =
           @state
-          |> Map.put_new(:module, unquote(caller))
+          |> Map.put_new(:module, unquote(caller.module))
           |> Map.put_new(:data, data)
           |> Map.put_new(:opts, opts)
           |> setup()
-        [init_graph] = render(state: state)
+        graph = SnapFramework.Compiler.compile(@template, [state: state], __ENV__)
         state =
           state
-          |> Map.put_new(:graph, init_graph)
+          |> Map.put_new(:graph, graph)
         {:ok, state, push: state.graph}
       end
 

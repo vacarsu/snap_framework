@@ -11,11 +11,13 @@ defmodule SnapFramework.Engine do
   def encode_to_iodata!(body) when is_binary(body), do: body
 
   @doc false
-  def init(_opts) do
+  def init(opts) do
+    IO.puts(inspect(opts))
     %{
       iodata: [],
       dynamic: [],
-      vars_count: 0
+      vars_count: 0,
+      assigns: opts[:assigns] || []
     }
   end
 
@@ -26,7 +28,8 @@ defmodule SnapFramework.Engine do
 
   @doc false
   def handle_end(quoted) do
-    handle_body(quoted)
+    quoted
+    |> handle_body()
   end
 
   @doc false
@@ -49,7 +52,7 @@ defmodule SnapFramework.Engine do
 
   @doc false
   def handle_expr(state, "=", ast) do
-    ast = traverse(ast)
+    ast = traverse(ast, state.assigns)
     %{iodata: iodata, dynamic: dynamic, vars_count: vars_count} = state
     var = Macro.var(:"arg#{vars_count}", __MODULE__)
     ast = quote do: unquote(var) = unquote(ast)
@@ -57,7 +60,7 @@ defmodule SnapFramework.Engine do
   end
 
   def handle_expr(state, "", ast) do
-    ast = traverse(ast)
+    ast = traverse(ast, state.assigns)
     %{dynamic: dynamic} = state
     %{state | dynamic: [ast | dynamic]}
   end
@@ -68,12 +71,11 @@ defmodule SnapFramework.Engine do
 
   ## Traversal
 
-  defp traverse(expr) do
+  defp traverse(expr, assigns) do
     expr
-    |> Macro.prewalk(&handle_graph/1)
     |> Macro.prewalk(&handle_assign/1)
-    |> Macro.prewalk(&handle_component/1)
-    |> Macro.prewalk(&handle_primitive/1)
+    |> Macro.prewalk(&handle_graph/1)
+    |> Macro.prewalk(&build_graph(&1, assigns))
   end
 
   defp handle_assign({:@, meta, [{name, _, atom}]}) when is_atom(name) and is_atom(atom) do
@@ -91,39 +93,82 @@ defmodule SnapFramework.Engine do
     end
   end
 
+  defp handle_graph({:graph, meta}) do
+    graph_val = Macro.var(:graph_val, __MODULE__)
+    quote line: meta[:line] || 0 do
+      unquote(graph_val) = Graph.build()
+    end
+  end
+
   defp handle_graph(arg), do: arg
 
-  defp handle_component({:component, meta, [name, data, opts]}) do
+  defp build_graph({:outlet, meta, [slot_name, opts]}, assigns) do
+    graph_val = Macro.var(:graph_val, __MODULE__)
+    {cmp, data} = assigns[:state][:data][:slots][slot_name]
+    quote line: meta[:line] || 0 do
+      unquote(graph_val) = unquote(cmp)(unquote(graph_val), unquote(data), unquote(opts))
+    end
+  end
+
+  defp build_graph({:component, meta, [name, opts, [do: {:__block__, [], slots}]]}, _assigns) do
+    graph_val = Macro.var(:graph_val, __MODULE__)
+    slot_list = Enum.reduce(slots, [], fn {:slot, _meta, [slot_name, cmp_name, data]}, acc ->
+      Keyword.put(acc, slot_name, {cmp_name, data})
+    end)
+    data = [slots: slot_list]
+    quote line: meta[:line] || 0 do
+      unquote(graph_val) = unquote(name)(
+        unquote(graph_val),
+        unquote(data),
+        unquote(opts)
+      )
+    end
+  end
+
+  defp build_graph({:component, meta, [name, data, opts, [do: {:__block__, [], slots}]]}, _assigns) do
+    graph_val = Macro.var(:graph_val, __MODULE__)
+    slot_list = Enum.reduce(slots, [], fn {:slot, _meta, [slot_name, cmp_name, data]}, acc ->
+      Keyword.put(acc, slot_name, {cmp_name, data})
+    end)
+    data = [slots: slot_list, data: data]
+    quote line: meta[:line] || 0 do
+      unquote(graph_val) = unquote(name)(
+        unquote(graph_val),
+        unquote(data),
+        unquote(opts)
+      )
+    end
+  end
+
+  defp build_graph({:component, meta, [name, data, opts]}, _assigns) when is_list(opts) do
     graph_val = Macro.var(:graph_val, __MODULE__)
     quote line: meta[:line] || 0 do
       unquote(graph_val) = unquote(name)(unquote(graph_val), unquote(data), unquote(opts))
     end
   end
 
-  defp handle_component({:component, meta, [name, data]}) do
+  defp build_graph({:component, meta, [name, data]}, _assigns) do
     graph_val = Macro.var(:graph_val, __MODULE__)
     quote line: meta[:line] || 0 do
       unquote(graph_val) = unquote(name)(unquote(graph_val), unquote(data))
     end
   end
 
-  defp handle_component(arg), do: arg
-
-  defp handle_primitive({:primitive, meta, [name, data, opts]}) do
+  defp build_graph({:primitive, meta, [name, data, opts]}, _assigns) when is_list(opts) do
     graph_val = Macro.var(:graph_val, __MODULE__)
     quote line: meta[:line] || 0 do
       unquote(graph_val) = unquote(name)(unquote(graph_val), unquote(data), unquote(opts))
     end
   end
 
-  defp handle_primitive({:primitive, meta, [name, data]}) do
+  defp build_graph({:primitive, meta, [name, data]}, _assigns) do
     graph_val = Macro.var(:graph_val, __MODULE__)
     quote line: meta[:line] || 0 do
       unquote(graph_val) = unquote(name)(unquote(graph_val), unquote(data))
     end
   end
 
-  defp handle_primitive(arg), do: arg
+  defp build_graph(arg, _assigns), do: arg
 
   @doc false
   def fetch_assign!(assigns, key) do

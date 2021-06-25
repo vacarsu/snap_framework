@@ -1,16 +1,17 @@
 defmodule Examples.Component.Button do
   import Scenic.Primitives
+  import Examples.Component.ButtonIcon, only: [button_icon: 3]
 
   use SnapFramework.Component,
     name: :button,
     template: "lib/components/button.eex",
-    state: %{text: ""},
+    state: %{icon_cmp: nil, text: ""},
     opts: []
 
-  defcomponent :button, :string
+  defcomponent :button, :any
 
   def setup(state) do
-    state = %{state | text: "test"}
+    state = %{state | icon_cmp: &text/2, text: "test"}
     Logger.debug("button setup #{inspect(state)}")
     state
   end

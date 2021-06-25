@@ -13,6 +13,7 @@ defmodule Examples.Scene.TestScene do
         {"Controls", :controls},
         {"Primitives", :primitives}
       ],
+      button_icon: :button_icon,
       test_clicked: false,
       dropdown_value: :dashboard,
       button_text: "test",
