@@ -63,11 +63,8 @@ defmodule SnapFramework.Component do
     end
   end
 
-  defmacro __before_compile__(env) do
+  defmacro __before_compile__(_env) do
     caller = __CALLER__
-    template = Module.get_attribute(env.module, :template)
-    state = Module.get_attribute(env.module, :state)
-    IO.puts(inspect(state))
     quote location: :keep do
       # EEx.function_from_file(:def, :render, @template, [:assigns], engine: SnapFramework.Engine)
 

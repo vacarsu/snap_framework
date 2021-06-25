@@ -3,8 +3,7 @@
 
     primitive :rounded_rectangle, {100, 50, 4}, id: :btn, fill: :blue
 
-    component :button_icon, [] do
+    component :button_icon, "", [] do
         slot :icon, :text, "test"
-        slot :text, :text, "test"
     end
 %>
