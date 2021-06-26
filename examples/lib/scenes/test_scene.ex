@@ -20,14 +20,14 @@ defmodule Examples.Scene.TestScene do
       text_value: "selected value <%= @state.dropdown_value %>"
     }
 
-  use_effect [on_changed: [:text_value]], [
+  use_effect [state: [text_value: :any]], [
     modify: [
       dropdown_value_text: {&text/3, :text_value}
     ]
   ]
 
-  use_effect [on_changed: [:dropdown_value]], [
-    add: [{&button/3, :button_text, id: :test_btn, translate: {200, 20}}],
+  use_effect [state: [dropdown_value: :primitives]], [
+    add: [{&button/3, nil, id: :test_btn, translate: {200, 20}}],
   ]
 
   use_effect [on_click: [:test_btn]], :noreply, [

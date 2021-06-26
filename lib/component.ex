@@ -81,18 +81,10 @@ defmodule SnapFramework.Component do
 
         context = [file: unquote(caller.file), line: unquote(caller.line)]
         info = Keyword.merge([assigns: [state: state], engine: SnapFramework.Engine], [file: unquote(caller.file), line: unquote(caller.line)])
-        # quoted = EEx.compile_file(@template, info)
-        # Logger.debug(inspect quoted, pretty: true)
-        # ast =
-        #   Code.eval_quoted(quoted, [state: state], __ENV__)
-
-        # [graph] = elem(ast, 0)
         graph =
           if not @preload do
-            Logger.info("not preloaded")
             SnapFramework.Engine.compile(@template, [assigns: [state: state]], info, __ENV__)
           else
-            Logger.info("preloaded")
             SnapFramework.Engine.compile_string(unquote(file), [assigns: [state: state]], info, __ENV__)
           end
 

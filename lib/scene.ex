@@ -117,27 +117,28 @@ defmodule SnapFramework.Scene do
     end
   end
 
-  defmacro use_effect([on_changed: ks], actions) do
+  defmacro use_effect([state: ks], actions) do
     quote location: :keep, bind_quoted: [ks: ks, actions: actions] do
       if not @using_effects do
         @using_effects true
         SnapFramework.Macros.scene_handlers()
       end
 
-      @effects_registry Enum.reduce(ks, @effects_registry, fn k, acc ->
+      @effects_registry Enum.reduce(ks, @effects_registry, fn
+      {k, v}, acc ->
         if Map.has_key?(acc, k) do
-          actions = Enum.reduce(actions, %{}, fn {a_key, a_list}, a_acc ->
+          actions = Enum.reduce(actions, %{}, fn {a_key, a_list}, _a_acc ->
             if Map.has_key?(acc[k], a_key) do
               Map.put(acc[k], a_key, [acc[k][a_key] | a_list])
             else
-              Map.put_new(acc[k], a_key, a_list)
+              Map.put_new(acc[k], a_key, {v, a_list})
             end
           end)
         else
           actions = Enum.reduce(actions, %{}, fn {a_key, a_list}, a_acc ->
             Map.put_new(a_acc, a_key, a_list)
           end)
-          Map.put_new(acc, k, actions)
+          Map.put_new(acc, k, {v, actions})
         end
       end)
     end
@@ -151,7 +152,6 @@ defmodule SnapFramework.Scene do
       def init(_, _) do
         state = setup(@state)
         [init_graph] = render(state: state)
-        Logger.debug(inspect init_graph)
         state =
           state
           |> Map.put_new(:module, unquote(caller))

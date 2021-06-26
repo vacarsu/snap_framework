@@ -56,26 +56,34 @@ defmodule SnapFramework.Macros do
       end
 
       defp process_effects(state, %{changed: :map_change, added: added}) do
-        Enum.reduce(added, state, fn {key, _value}, acc ->
-          acc |> change(key)
+        Enum.reduce(added, state, fn {key, value}, acc ->
+          acc |> change(key, value)
         end)
       end
 
-      defp change(state, key) do
-        effect = Map.get(@effects_registry, key)
+      defp change(state, key, value) do
+        {effect_value, effect} = Map.get(@effects_registry, key, {nil, nil})
 
         if effect do
-          Enum.reduce(effect, state, fn {e_key, list}, acc ->
-            case e_key do
-              :add -> Enum.reduce(list, acc, fn item, s_acc -> add(s_acc, item) end)
-              :modify -> Enum.reduce(list, acc, fn item, s_acc -> modify(s_acc, item) end)
-              :delete -> Enum.reduce(list, acc, fn item, s_acc -> delete(s_acc, item) end)
-              _ -> acc
-            end
-          end)
+          if effect_value == :any or effect_value == value do
+            run_effect(effect, state)
+          else
+            state
+          end
         else
           state
         end
+      end
+
+      defp run_effect(effect, state) do
+        Enum.reduce(effect, state, fn {e_key, list}, acc ->
+          case e_key do
+            :add -> Enum.reduce(list, acc, fn item, s_acc -> add(s_acc, item) end)
+            :modify -> Enum.reduce(list, acc, fn item, s_acc -> modify(s_acc, item) end)
+            :delete -> Enum.reduce(list, acc, fn item, s_acc -> delete(s_acc, item) end)
+            _ -> acc
+          end
+        end)
       end
 
       defp add(state, {cmp_fun, state_key, opts}) do

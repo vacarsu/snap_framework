@@ -26,7 +26,7 @@ defmodule SnapFramework.Engine do
 
   @doc false
   def init(opts) do
-    Logger.info(inspect(opts, pretty: true))
+    # Logger.info(inspect(opts, pretty: true))
     %{
       iodata: [],
       dynamic: [],
@@ -86,7 +86,7 @@ defmodule SnapFramework.Engine do
   ## Traversal
 
   defp traverse(expr, assigns) do
-    Logger.debug(inspect expr, pretty: true)
+    # Logger.debug(inspect expr, pretty: true)
     expr
     |> Macro.prewalk(&handle_assign/1)
     |> Macro.prewalk(&handle_graph/1)
@@ -248,7 +248,6 @@ defmodule SnapFramework.Engine do
   defp build_graph({:outlet, meta, [slot_name, opts]}, assigns) do
     graph_val = Macro.var(:graph_val, __MODULE__)
     {cmp, data} = assigns[:state][:data][:slots][slot_name] || {nil, nil}
-    Logger.warn("outlet #{inspect cmp}")
     quote line: meta[:line] || 0 do
       unquote(graph_val) =
         if not is_nil(unquote(cmp)) do
