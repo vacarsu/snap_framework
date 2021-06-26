@@ -10,8 +10,23 @@ defmodule SnapFramework.Engine do
   def encode_to_iodata!({:safe, body}), do: body
   def encode_to_iodata!(body) when is_binary(body), do: body
 
+  def compile(path, assigns, info, env) do
+    quoted = EEx.compile_file(path, info)
+    ast = Code.eval_quoted(quoted, assigns, env)
+    [graph] = elem(ast, 0)
+    graph
+  end
+
+  def compile_string(string, assigns, info, env) do
+    quoted = EEx.compile_string(string, info)
+    ast = Code.eval_quoted(quoted, assigns, env)
+    [graph] = elem(ast, 0)
+    graph
+  end
+
   @doc false
   def init(opts) do
+    Logger.info(inspect(opts, pretty: true))
     %{
       iodata: [],
       dynamic: [],
@@ -233,6 +248,7 @@ defmodule SnapFramework.Engine do
   defp build_graph({:outlet, meta, [slot_name, opts]}, assigns) do
     graph_val = Macro.var(:graph_val, __MODULE__)
     {cmp, data} = assigns[:state][:data][:slots][slot_name] || {nil, nil}
+    Logger.warn("outlet #{inspect cmp}")
     quote line: meta[:line] || 0 do
       unquote(graph_val) =
         if not is_nil(unquote(cmp)) do

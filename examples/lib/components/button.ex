@@ -10,11 +10,11 @@ defmodule Examples.Component.Button do
 
   defcomponent :button, :any
 
-  def setup(state) do
-    state = %{state | icon_cmp: &text/2, text: "test"}
-    Logger.debug("button setup #{inspect(state)}")
-    state
-  end
+  # def setup(state) do
+  #   state = %{state | icon_cmp: &text/2, text: "test"}
+  #   Logger.debug("button setup #{inspect(state)}")
+  #   state
+  # end
 
   def process_input({:cursor_button, {:left, :press, _, _}}, _context, state) do
     id = state.opts[:id]

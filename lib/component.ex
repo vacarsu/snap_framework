@@ -1,7 +1,6 @@
 defmodule SnapFramework.Component do
   alias Scenic.Graph
   alias Scenic.Primitive
-  alias Scenic.Primitives
   require Logger
 
   defmacro __using__([name: name, template: template, state: state, opts: opts]) do
@@ -17,6 +16,8 @@ defmodule SnapFramework.Component do
       require SnapFramework.Macros
       require EEx
       require Logger
+
+      @preload unquote(opts[:preload]) || true
 
       @before_compile SnapFramework.Component
 
@@ -58,15 +59,17 @@ defmodule SnapFramework.Component do
       end
 
       def unquote(name)(%unquote(Primitive){module: SceneRef} = p, data, options) do
-        Primitives.modify(p, {__MODULE__, data}, options)
+        Primitive.put(p, {__MODULE__, data}, options)
       end
     end
   end
 
-  defmacro __before_compile__(_env) do
+  defmacro __before_compile__(env) do
     caller = __CALLER__
+    template = Module.get_attribute(env.module, :template)
+    preload = Module.get_attribute(env.module, :preload)
+    file = if preload, do: File.read!(template), else: nil
     quote location: :keep do
-      # EEx.function_from_file(:def, :render, @template, [:assigns], engine: SnapFramework.Engine)
 
       def init(data, opts \\ []) do
         state =
@@ -75,7 +78,24 @@ defmodule SnapFramework.Component do
           |> Map.put_new(:data, data)
           |> Map.put_new(:opts, opts)
           |> setup()
-        graph = SnapFramework.Compiler.compile(@template, [state: state], __ENV__)
+
+        context = [file: unquote(caller.file), line: unquote(caller.line)]
+        info = Keyword.merge([assigns: [state: state], engine: SnapFramework.Engine], [file: unquote(caller.file), line: unquote(caller.line)])
+        # quoted = EEx.compile_file(@template, info)
+        # Logger.debug(inspect quoted, pretty: true)
+        # ast =
+        #   Code.eval_quoted(quoted, [state: state], __ENV__)
+
+        # [graph] = elem(ast, 0)
+        graph =
+          if not @preload do
+            Logger.info("not preloaded")
+            SnapFramework.Engine.compile(@template, [assigns: [state: state]], info, __ENV__)
+          else
+            Logger.info("preloaded")
+            SnapFramework.Engine.compile_string(unquote(file), [assigns: [state: state]], info, __ENV__)
+          end
+
         state =
           state
           |> Map.put_new(:graph, graph)

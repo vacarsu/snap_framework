@@ -1,6 +1,6 @@
 <%= graph font_size: 20
 
-    component :button, :button_icon, id: :test_btn, translate: {200, 20}
+    component :button, nil, id: :test_btn, translate: {200, 20}
 
     primitive :text,
         "selected value #{@state.dropdown_value}",

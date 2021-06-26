@@ -1,5 +1,5 @@
 defmodule Examples.Component.ButtonIcon do
-  import Scenic.Primitives, only: [text: 3]
+  import Scenic.Primitives
 
   use SnapFramework.Component,
     name: :button_icon,
