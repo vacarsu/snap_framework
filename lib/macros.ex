@@ -62,14 +62,10 @@ defmodule SnapFramework.Macros do
       end
 
       defp change(state, key, value) do
-        {effect_value, effect} = Map.get(@effects_registry, key, {nil, nil})
+        effect = Map.get(@effects_registry, {key, value})
 
         if effect do
-          if effect_value == :any or effect_value == value do
-            run_effect(effect, state)
-          else
-            state
-          end
+          run_effect(effect, state)
         else
           state
         end

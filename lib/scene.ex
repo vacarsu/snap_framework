@@ -125,20 +125,20 @@ defmodule SnapFramework.Scene do
       end
 
       @effects_registry Enum.reduce(ks, @effects_registry, fn
-      {k, v}, acc ->
-        if Map.has_key?(acc, k) do
+      kv, acc ->
+        if Map.has_key?(acc, kv) do
           actions = Enum.reduce(actions, %{}, fn {a_key, a_list}, _a_acc ->
-            if Map.has_key?(acc[k], a_key) do
-              Map.put(acc[k], a_key, [acc[k][a_key] | a_list])
+            if Map.has_key?(acc[kv], a_key) do
+              Map.put(acc[kv], a_key, [acc[kv][a_key] | a_list])
             else
-              Map.put_new(acc[k], a_key, {v, a_list})
+              Map.put_new(acc[kv], a_key, a_list)
             end
           end)
         else
           actions = Enum.reduce(actions, %{}, fn {a_key, a_list}, a_acc ->
             Map.put_new(a_acc, a_key, a_list)
           end)
-          Map.put_new(acc, k, {v, actions})
+          Map.put_new(acc, kv, actions)
         end
       end)
     end
