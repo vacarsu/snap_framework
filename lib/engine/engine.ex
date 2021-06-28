@@ -12,16 +12,18 @@ defmodule SnapFramework.Engine do
 
   def compile(path, assigns, info, env) do
     quoted = EEx.compile_file(path, info)
-    ast = Code.eval_quoted(quoted, assigns, env)
-    [graph] = elem(ast, 0)
-    graph
+    Logger.debug(inspect quoted, pretty: true)
+    {result, _binding} = Code.eval_quoted(quoted, assigns, env)
+    IO.puts(inspect result, pretty: true)
+    List.last(result)
   end
 
   def compile_string(string, assigns, info, env) do
     quoted = EEx.compile_string(string, info)
-    ast = Code.eval_quoted(quoted, assigns, env)
-    [graph] = elem(ast, 0)
-    graph
+    Logger.debug(inspect quoted, pretty: true)
+    {result, _binding} = Code.eval_quoted(quoted, assigns, env)
+    IO.puts(inspect result, pretty: true)
+    List.last(result)
   end
 
   @doc false
@@ -124,12 +126,69 @@ defmodule SnapFramework.Engine do
   defp handle_graph(arg), do: arg
 
   # -----------------------------------------------
+  # handle fn block
+  # -----------------------------------------------
+  defp build_graph(
+    {:for, meta,
+    [
+      {:<-, _,
+      [
+        _,
+        {{:., _,
+          [
+            {{:., _,
+              [
+                {:__aliases__, _,
+                _},
+                :fetch_assign!
+              ]}, _,
+            [
+              {:var!, [line: 22, context: SnapFramework.Engine, import: Kernel],
+                [{:assigns, _, SnapFramework.Engine}]},
+              var
+            ]},
+            key
+          ]}, _, []}
+      ]},
+      [
+        do: {:__block__, [], block}
+      ]
+    ]},
+    assigns
+  ) do
+    # graph_val = Macro.var(:graph_val, __MODULE__)
+    Logger.debug("fn block #{inspect block, pretty: true}")
+    for {cmp, data, opts} <- assigns[var][key] do
+      quote line: meta[:line] || 0 do
+        {:slot, [unquote(cmp), unquote(data), unquote(opts)]}
+      end
+    end
+  end
+
+  # -----------------------------------------------
+  # render a component with several unnamed slots
+  # from loop with data passed
+  # -----------------------------------------------
+  defp build_graph({:component, meta, [name, data, opts, [do: {:__block__, [], [{:=, [], [_, slots]}, _]}]]}, _assigns) do
+    graph_val = Macro.var(:graph_val, __MODULE__)
+    Logger.debug(inspect slots, pretty: true)
+    data = [slots: slots, data: data]
+    quote line: meta[:line] || 0 do
+      unquote(graph_val) = unquote(name)(
+        unquote(graph_val),
+        unquote(data),
+        unquote(opts)
+      )
+    end
+  end
+
+  # -----------------------------------------------
   # render a component with several slots with no data passed
   # -----------------------------------------------
   defp build_graph({:component, meta, [name, opts, [do: {:__block__, [], slots}]]}, _assigns) do
     graph_val = Macro.var(:graph_val, __MODULE__)
-    slot_list = Enum.reduce(slots, [], fn {:slot, _meta, [slot_name, cmp_name, data]}, acc ->
-      Keyword.put(acc, slot_name, {cmp_name, data})
+    slot_list = Enum.reduce(slots, [], fn {:slot, _meta, [slot_name, cmp_name, cmp_data]}, acc ->
+      Keyword.put(acc, slot_name, {cmp_name, cmp_data})
     end)
     data = [slots: slot_list]
     quote line: meta[:line] || 0 do
@@ -233,16 +292,16 @@ defmodule SnapFramework.Engine do
   end
 
   # -----------------------------------------------
-  # rewrite single slot statement
+  # rewrite slot
   # -----------------------------------------------
-  # defp build_graph({:slot, meta, [slot_name, cmp_name, cmp_data]}, _assigns) do
-  #     quote line: meta[:line] || 0 do
-  #       [slot: [unquote(slot_name), unquote(cmp_name), unquote(cmp_data)]]
-  #     end
-  # end
+  defp build_graph({:slot, meta, args}, _assigns) do
+    quote line: meta[:line] || 0 do
+      {:slot, unquote(args)}
+    end
+  end
 
   # -----------------------------------------------
-  # render the slot component passed to the
+  # render the list of slot component passed to the
   # outlet component if it matches the slot_name
   # -----------------------------------------------
   defp build_graph({:outlet, meta, [slot_name, opts]}, assigns) do
@@ -259,9 +318,55 @@ defmodule SnapFramework.Engine do
   end
 
   # -----------------------------------------------
+  # render the slot component for unnamed outlet
+  # used typically to render a list of components
+  # -----------------------------------------------
+  defp build_graph({:outlet, meta, [opts]}, assigns) do
+    graph_val = Macro.var(:graph_val, __MODULE__)
+    cmps = assigns[:state][:data][:slots] || nil
+    Enum.reduce(cmps, graph_val, fn {_k, [cmp, data, cmp_opts]}, g ->
+      quote line: meta[:line] || 0 do
+          Scenic.Primitives.group(unquote(g), fn g ->
+            unquote(cmp)(g, unquote(data), unquote(cmp_opts))
+          end, unquote(opts))
+      end
+    end)
+  end
+
+  # -----------------------------------------------
+  # render the slot component passed to the
+  # outlet component if it matches the slot_name
+  # -----------------------------------------------
+  # defp build_graph({:outlet, meta, [slot_name, opts]}, assigns) do
+  #   graph_val = Macro.var(:graph_val, __MODULE__)
+  #   match = assigns[:state][:data][:slots][slot_name] || nil
+  #   case match do
+  #     {cmp, data} ->
+  #       quote line: meta[:line] || 0 do
+  #         unquote(graph_val) =
+  #           unquote(cmp)(unquote(graph_val), unquote(data), unquote(opts))
+  #       end
+  #     cmp when is_list(cmp) ->
+  #         quote line: meta[:line] || 0 do
+  #           Enum.reduce(unquote(match), unquote(graph_val), fn {cmp, data, cmp_opts}, acc ->
+  #             unquote(cmp)(acc, data, cmp_opts)
+  #           end)
+  #         end
+  #     nil -> quote do unquote(graph_val) end
+  #     _ -> quote do unquote(graph_val) end
+  #   end
+  # end
+
+  # -----------------------------------------------
   # ignore unhanded expressions
   # -----------------------------------------------
   defp build_graph(arg, _assigns), do: arg
+
+  def interpolate_component(graph, cmp_name, data, opts) do
+    quote bind_quoted: [graph: graph, cmp_name: cmp_name, data: data, opts: opts] do
+      cmp_name(graph, data, opts)
+    end
+  end
 
   @doc false
   def fetch_assign!(assigns, key) do

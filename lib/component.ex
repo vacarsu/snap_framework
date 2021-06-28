@@ -69,8 +69,8 @@ defmodule SnapFramework.Component do
     template = Module.get_attribute(env.module, :template)
     preload = Module.get_attribute(env.module, :preload)
     file = if preload, do: File.read!(template), else: nil
-    quote location: :keep do
 
+    quote location: :keep do
       def init(data, opts \\ []) do
         state =
           @state
@@ -80,7 +80,12 @@ defmodule SnapFramework.Component do
           |> setup()
 
         context = [file: unquote(caller.file), line: unquote(caller.line)]
-        info = Keyword.merge([assigns: [state: state], engine: SnapFramework.Engine], [file: unquote(caller.file), line: unquote(caller.line)])
+
+        info = Keyword.merge(
+          [assigns: [state: state], engine: SnapFramework.Engine],
+          [file: unquote(caller.file), line: unquote(caller.line), trim: true]
+        )
+
         graph =
           if not @preload do
             SnapFramework.Engine.compile(@template, [assigns: [state: state]], info, __ENV__)

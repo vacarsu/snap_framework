@@ -1,5 +1,9 @@
-<%= graph font_size: 20
+<%= graph font_size: 20 %>
 
-    outlet :icon, translate: {25, 25}
-    outlet :text, translate: {100, 25}
+<%= outlet :icon,
+    translate: {25, 25} 
+%>
+
+<%= outlet :text, 
+    translate: {100, 25} 
 %>

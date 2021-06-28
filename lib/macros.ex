@@ -62,7 +62,7 @@ defmodule SnapFramework.Macros do
       end
 
       defp change(state, key, value) do
-        effect = Map.get(@effects_registry, {key, value})
+        effect = Map.get(@effects_registry, {key, value}) || Map.get(@effects_registry, {key, :any})
 
         if effect do
           run_effect(effect, state)
@@ -91,6 +91,29 @@ defmodule SnapFramework.Macros do
       defp modify(state, {cmp_id, {cmp_fun, state_key}}) when is_atom(state_key) do
         state.graph
         |> Graph.modify(cmp_id, fn g -> cmp_fun.(g, state[state_key], []) end)
+        |>(&%{state | graph: &1}).()
+      end
+
+      defp modify(state, {cmp_id, {cmp_fun, {:state, nested_keys}, opts}})
+      when is_list(nested_keys) and is_list(opts)
+      do
+        value =
+          Enum.reduce(nested_keys, nil, fn key, acc ->
+            acc = if is_nil(acc), do: state[key], else: acc[key]
+          end)
+        state.graph
+        |> Graph.modify(cmp_id, fn g -> cmp_fun.(g, value, opts) end)
+        |>(&%{state | graph: &1}).()
+      end
+
+      defp modify(state, {cmp_id, {cmp_fun, {:state, nested_keys}}}) when is_list(nested_keys)
+      do
+        value =
+          Enum.reduce(nested_keys, nil, fn key, acc ->
+            acc = if is_nil(acc), do: state[key], else: acc[key]
+          end)
+        state.graph
+        |> Graph.modify(cmp_id, fn g -> cmp_fun.(g, value, []) end)
         |>(&%{state | graph: &1}).()
       end
 

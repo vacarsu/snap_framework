@@ -144,18 +144,33 @@ defmodule SnapFramework.Scene do
     end
   end
 
-  defmacro __before_compile__(_env) do
-    caller = __CALLER__.module
+  defmacro __before_compile__(env) do
+    caller = __CALLER__
+    template = Module.get_attribute(env.module, :template)
+    file = File.read!(template)
     quote location: :keep do
-      EEx.function_from_file(:def, :render, @template, [:assigns], engine: SnapFramework.Engine)
+      # EEx.function_from_file(:def, :render, @template, [:assigns], engine: SnapFramework.Engine)
 
       def init(_, _) do
-        state = setup(@state)
-        [init_graph] = render(state: state)
+        # [init_graph] = render(state: state)
+        state =
+          @state
+          |> Map.put_new(:module, unquote(caller.module))
+          |> setup()
+
+        info =
+          Keyword.merge(
+            [assigns: [state: state], engine: SnapFramework.Engine],
+            [file: unquote(caller.file), line: unquote(caller.line), trim: true]
+          )
+
+        graph =
+          SnapFramework.Engine.compile_string(unquote(file), [assigns: [state: state]], info, __ENV__)
+
         state =
           state
-          |> Map.put_new(:module, unquote(caller))
-          |> Map.put_new(:graph, init_graph)
+          |> Map.put_new(:graph, graph)
+
         {:ok, state, push: state.graph}
       end
 

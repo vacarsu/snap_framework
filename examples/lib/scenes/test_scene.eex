@@ -1,16 +1,25 @@
-<%= graph font_size: 20
+<%= graph font_size: 20 %>
 
-    component :button, nil, id: :test_btn, translate: {200, 20}
-
-    primitive :text,
-        "selected value #{@state.dropdown_value}",
-        id: :dropdown_value_text,
-        translate: {20, 80}
-
-    component :dropdown, {
-            @state.dropdown_opts,
-            @state.dropdown_value
-        },
-        id: :dropdown,
-        translate: {20, 20}
+<%= component :button,
+    nil, id: :test_btn, translate: {200, 20}
 %>
+
+<%= primitive :text,
+    "selected value #{@state.dropdown_value}",
+    id: :dropdown_value_text,
+    translate: {20, 80}
+%>
+
+<%= component :dropdown, {
+        @state.dropdown_opts,
+        @state.dropdown_value
+    },
+    id: :dropdown,
+    translate: {20, 20}
+%>
+
+<%= component :button_list, nil, translate: {20, 120} do %>
+    <%= for {btn_cmp, data, opts} <- @state.buttons do %>
+        <%= slot btn_cmp, data, opts %>
+    <% end %>
+<% end %>
