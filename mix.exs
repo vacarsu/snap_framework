@@ -5,7 +5,7 @@ defmodule SnapFramework.MixProject do
     [
       app: :snap_framework,
       version: "0.1.0",
-      elixir: "~> 1.7",
+      elixir: "~> 1.12",
       build_embedded: true,
       start_permanent: Mix.env() == :prod,
       deps: deps()
@@ -23,8 +23,12 @@ defmodule SnapFramework.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:scenic, "~> 0.10"},
-      {:scenic_driver_glfw, "~> 0.10", targets: :host},
+      {:scenic, git: "https://github.com/boydm/scenic.git", branch: "v0.11"},
+      {:scenic_driver_glfw, git: "https://github.com/boydm/scenic_driver_glfw.git", branch: "v0.11"},
+
+      {:truetype_metrics, "~> 0.5", only: [:dev, :test], runtime: false},
+
+      {:dialyxir, "~> 1.1", only: :dev, runtime: false},
       {:ring_logger, "~> 0.6"},
       {:map_diff, "~> 1.3.4"}
     ]

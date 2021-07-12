@@ -3,11 +3,11 @@ defmodule SnapFramework.Scene do
 
   @optional_callbacks setup: 1
 
-  @callback process_call(msg :: map, from :: GenServer.from, state :: map) :: {term :: atom, state :: map}
-  @callback process_info(msg :: any, state :: map) :: {term :: atom, state :: map}
-  @callback process_cast(msg :: any, state :: map) :: {term :: atom, state:: map}
-  @callback process_input(input :: any, context :: any, state :: map) :: {term :: atom, state :: map}
-  @callback process_event(event :: any, from_pid :: any, state :: map) :: {term :: atom, state :: map}
+  @callback process_call(msg :: map, from :: GenServer.from, scene :: map) :: {term :: atom, scene :: map}
+  @callback process_info(msg :: any, scene :: map) :: {term :: atom, scene :: map}
+  @callback process_cast(msg :: any, scene :: map) :: {term :: atom, scene:: map}
+  @callback process_input(input :: any, context :: any, scene :: map) :: {term :: atom, scene :: map}
+  @callback process_event(event :: any, from_pid :: any, scene :: map) :: {term :: atom, scene :: map}
   @callback setup(state :: map()) :: map()
 
   defmacro __using__(name: name, template: template, state: state) do
@@ -24,6 +24,7 @@ defmodule SnapFramework.Scene do
 
       @name unquote(name)
       @template unquote(template)
+      @external_resource @template
       @state unquote(state)
 
       @using_effects false
@@ -31,6 +32,7 @@ defmodule SnapFramework.Scene do
 
       @before_compile SnapFramework.Scene
 
+      def terminate(_, state), do: {:noreply, state}
       def process_call(msg, from, state), do: {:noreply, state}
       def process_info(msg, state), do: {:noreply, state}
       def process_cast(msg, state), do: {:noreply, state}
@@ -61,11 +63,13 @@ defmodule SnapFramework.Scene do
 
       @name unquote(name)
       @template unquote(template)
+      @external_resource @template
       @state unquote(state)
 
       @using_effects false
       @effects_registry %{}
 
+      def terminate(_, state), do: {:noreply, state}
       def process_call(msg, from, state), do: {:noreply, state}
       def process_info(msg, state), do: {:noreply, state}
       def process_cast(msg, state), do: {:noreply, state}
@@ -151,30 +155,58 @@ defmodule SnapFramework.Scene do
     quote location: :keep do
       # EEx.function_from_file(:def, :render, @template, [:assigns], engine: SnapFramework.Engine)
 
-      def init(_, _) do
-        # [init_graph] = render(state: state)
-        state =
-          @state
-          |> Map.put_new(:module, unquote(caller.module))
-          |> setup()
+      def init(scene, _, _) do
+        scene =
+          scene
+          |> assign(
+            state: @state
+              |> Map.put_new(:module, unquote(caller.module))
+              |> setup
+          )
 
+        scene = recompile(scene)
+
+        {:ok, scene}
+      end
+
+      SnapFramework.Macros.effect_handlers()
+
+      def recompile(scene) do
         info =
           Keyword.merge(
-            [assigns: [state: state], engine: SnapFramework.Engine],
+            [assigns: [state: scene.assigns.state], engine: SnapFramework.Engine],
             [file: unquote(caller.file), line: unquote(caller.line), trim: true]
           )
 
         graph =
-          SnapFramework.Engine.compile_string(unquote(file), [assigns: [state: state]], info, __ENV__)
+          SnapFramework.Engine.compile_string(unquote(file), [assigns: [state: scene.assigns.state]], info, __ENV__)
 
-        state =
-          state
-          |> Map.put_new(:graph, graph)
-
-        {:ok, state, push: state.graph}
+        scene
+        |> assign(graph: graph)
+        |> push_graph(graph)
       end
+    end
+  end
 
-      SnapFramework.Macros.effect_handlers()
+  defmacro slot(graph, cmp, data) do
+    Logger.debug("component slot hit")
+    Logger.debug(inspect data)
+    data = Macro.expand_once(data, __CALLER__)
+    Logger.debug(inspect data)
+    quote do
+      var!(graph_val) =
+        unquote(cmp)(unquote(graph), unquote(data))
+    end
+  end
+
+  defmacro slot(graph, cmp, data, opts) do
+    Logger.debug("component slot hit")
+    Logger.debug(inspect data)
+    data = Macro.expand_once(data, __CALLER__)
+    Logger.debug(inspect data)
+    quote do
+      var!(graph_val) =
+        unquote(cmp)(unquote(graph), unquote(data), unquote(opts))
     end
   end
 end

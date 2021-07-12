@@ -23,8 +23,13 @@ defmodule Examples.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:scenic, "~> 0.10"},
-      {:scenic_driver_glfw, "~> 0.10", targets: :host},
+      {:scenic, git: "https://github.com/boydm/scenic.git", branch: "v0.11"},
+      {:scenic_driver_glfw, git: "https://github.com/boydm/scenic_driver_glfw.git", branch: "v0.11"},
+
+      {:truetype_metrics, "~> 0.5", only: [:dev, :test], runtime: false},
+      {:ex_image_info, "~> 0.2.4", runtime: false},
+
+      {:dialyxir, "~> 1.1", only: :dev, runtime: false},
       {:ring_logger, "~> 0.6"},
       {:snap_framework, path: Path.relative_to_cwd("..")}
     ]

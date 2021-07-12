@@ -4,31 +4,27 @@ defmodule SnapFramework.Engine do
   """
 
   @behaviour EEx.Engine
-  alias Scenic.Graph
   require Logger
 
   def encode_to_iodata!({:safe, body}), do: body
   def encode_to_iodata!(body) when is_binary(body), do: body
 
-  def compile(path, assigns, info, env) do
+  def compile(path, assigns, info, _env) do
     quoted = EEx.compile_file(path, info)
-    Logger.debug(inspect quoted, pretty: true)
-    {result, _binding} = Code.eval_quoted(quoted, assigns, env)
-    IO.puts(inspect result, pretty: true)
+    {result, _binding} = Code.eval_quoted(quoted, assigns)
     List.last(result)
   end
 
   def compile_string(string, assigns, info, env) do
     quoted = EEx.compile_string(string, info)
-    Logger.debug(inspect quoted, pretty: true)
     {result, _binding} = Code.eval_quoted(quoted, assigns, env)
-    IO.puts(inspect result, pretty: true)
+    Logger.debug(inspect List.last(result), pretty: true)
     List.last(result)
   end
 
   @doc false
   def init(opts) do
-    # Logger.info(inspect(opts, pretty: true))
+    Logger.info(inspect(opts, pretty: true))
     %{
       iodata: [],
       dynamic: [],
@@ -39,6 +35,7 @@ defmodule SnapFramework.Engine do
 
   @doc false
   def handle_begin(state) do
+    Macro.var(:assigns, __MODULE__)
     %{state | iodata: [], dynamic: []}
   end
 
@@ -88,284 +85,14 @@ defmodule SnapFramework.Engine do
   ## Traversal
 
   defp traverse(expr, assigns) do
-    # Logger.debug(inspect expr, pretty: true)
+    Logger.debug(inspect expr, pretty: true)
     expr
-    |> Macro.prewalk(&handle_assign/1)
-    |> Macro.prewalk(&handle_graph/1)
-    |> Macro.prewalk(&build_graph(&1, assigns))
-  end
-
-  defp handle_assign({:@, meta, [{name, _, atom}]}) when is_atom(name) and is_atom(atom) do
-    quote line: meta[:line] || 0 do
-      SnapFramework.Engine.fetch_assign!(var!(assigns), unquote(name))
-    end
-  end
-
-  defp handle_assign(arg), do: arg
-
-  # -----------------------------------------------
-  # build graph with options
-  # -----------------------------------------------
-  defp handle_graph({:graph, meta, [opts]}) do
-    graph_val = Macro.var(:graph_val, __MODULE__)
-    quote line: meta[:line] || 0 do
-      unquote(graph_val) = Graph.build(unquote(opts))
-    end
-  end
-
-  # -----------------------------------------------
-  # build graph with no options
-  # -----------------------------------------------
-  defp handle_graph({:graph, meta, []}) do
-    graph_val = Macro.var(:graph_val, __MODULE__)
-    quote line: meta[:line] || 0 do
-      unquote(graph_val) = Graph.build()
-    end
-  end
-
-  defp handle_graph(arg), do: arg
-
-  # -----------------------------------------------
-  # handle fn block
-  # -----------------------------------------------
-  defp build_graph(
-    {:for, meta,
-    [
-      {:<-, _,
-      [
-        _,
-        {{:., _,
-          [
-            {{:., _,
-              [
-                {:__aliases__, _,
-                _},
-                :fetch_assign!
-              ]}, _,
-            [
-              {:var!, [line: 22, context: SnapFramework.Engine, import: Kernel],
-                [{:assigns, _, SnapFramework.Engine}]},
-              var
-            ]},
-            key
-          ]}, _, []}
-      ]},
-      [
-        do: {:__block__, [], block}
-      ]
-    ]},
-    assigns
-  ) do
-    # graph_val = Macro.var(:graph_val, __MODULE__)
-    Logger.debug("fn block #{inspect block, pretty: true}")
-    for {cmp, data, opts} <- assigns[var][key] do
-      quote line: meta[:line] || 0 do
-        {:slot, [unquote(cmp), unquote(data), unquote(opts)]}
-      end
-    end
-  end
-
-  # -----------------------------------------------
-  # render a component with several unnamed slots
-  # from loop with data passed
-  # -----------------------------------------------
-  defp build_graph({:component, meta, [name, data, opts, [do: {:__block__, [], [{:=, [], [_, slots]}, _]}]]}, _assigns) do
-    graph_val = Macro.var(:graph_val, __MODULE__)
-    Logger.debug(inspect slots, pretty: true)
-    data = [slots: slots, data: data]
-    quote line: meta[:line] || 0 do
-      unquote(graph_val) = unquote(name)(
-        unquote(graph_val),
-        unquote(data),
-        unquote(opts)
-      )
-    end
-  end
-
-  # -----------------------------------------------
-  # render a component with several slots with no data passed
-  # -----------------------------------------------
-  defp build_graph({:component, meta, [name, opts, [do: {:__block__, [], slots}]]}, _assigns) do
-    graph_val = Macro.var(:graph_val, __MODULE__)
-    slot_list = Enum.reduce(slots, [], fn {:slot, _meta, [slot_name, cmp_name, cmp_data]}, acc ->
-      Keyword.put(acc, slot_name, {cmp_name, cmp_data})
-    end)
-    data = [slots: slot_list]
-    quote line: meta[:line] || 0 do
-      unquote(graph_val) = unquote(name)(
-        unquote(graph_val),
-        unquote(data),
-        unquote(opts)
-      )
-    end
-  end
-
-  # -----------------------------------------------
-  # render a component with several slots with data passed
-  # -----------------------------------------------
-  defp build_graph({:component, meta, [name, data, opts, [do: {:__block__, [], slots}]]}, _assigns) do
-    graph_val = Macro.var(:graph_val, __MODULE__)
-    slot_list = Enum.reduce(slots, [], fn {:slot, _meta, [slot_name, cmp_name, cmp_data]}, acc ->
-      Keyword.put(acc, slot_name, {cmp_name, cmp_data})
-    end)
-    data = [slots: slot_list, data: data]
-    quote line: meta[:line] || 0 do
-      unquote(graph_val) = unquote(name)(
-        unquote(graph_val),
-        unquote(data),
-        unquote(opts)
-      )
-    end
-  end
-
-  # -----------------------------------------------
-  # render a slotted component with no data passed
-  # -----------------------------------------------
-  defp build_graph({:component, meta, [name, opts, [do: {:slot, _meta, [slot_name, cmp_name, cmp_data]}]]}, _assigns) do
-    # Logger.debug(inspect block, pretty: true)
-    graph_val = Macro.var(:graph_val, __MODULE__)
-    slot_list = [{slot_name, {cmp_name, cmp_data}}]
-    data = [slots: slot_list]
-    quote line: meta[:line] || 0 do
-      unquote(graph_val) = unquote(name)(
-        unquote(graph_val),
-        unquote(data),
-        unquote(opts)
-      )
-    end
-  end
-
-  # -----------------------------------------------
-  # render a slotted component with data passed
-  # -----------------------------------------------
-  defp build_graph({:component, meta, [name, data, opts, [do: {:slot, _meta, [slot_name, cmp_name, cmp_data]}]]}, _assigns) do
-    graph_val = Macro.var(:graph_val, __MODULE__)
-    slot_list = [{slot_name, {cmp_name, cmp_data}}]
-    data = [slots: slot_list, data: data]
-    quote line: meta[:line] || 0 do
-      unquote(graph_val) = unquote(name)(
-        unquote(graph_val),
-        unquote(data),
-        unquote(opts)
-      )
-    end
-  end
-
-  # -----------------------------------------------
-  # render a component with opts passed
-  # -----------------------------------------------
-  defp build_graph({:component, meta, [name, data, opts]}, _assigns) when is_list(opts) do
-    graph_val = Macro.var(:graph_val, __MODULE__)
-    quote line: meta[:line] || 0 do
-      unquote(graph_val) = unquote(name)(unquote(graph_val), unquote(data), unquote(opts))
-    end
-  end
-
-  # -----------------------------------------------
-  # render a component with no opts passed
-  # -----------------------------------------------
-  defp build_graph({:component, meta, [name, data]}, _assigns) do
-    graph_val = Macro.var(:graph_val, __MODULE__)
-    quote line: meta[:line] || 0 do
-      unquote(graph_val) = unquote(name)(unquote(graph_val), unquote(data))
-    end
-  end
-
-  # -----------------------------------------------
-  # render a primitive with opts passed
-  # -----------------------------------------------
-  defp build_graph({:primitive, meta, [name, data, opts]}, _assigns) when is_list(opts) do
-    graph_val = Macro.var(:graph_val, __MODULE__)
-    quote line: meta[:line] || 0 do
-      unquote(graph_val) = unquote(name)(unquote(graph_val), unquote(data), unquote(opts))
-    end
-  end
-
-  # -----------------------------------------------
-  # render a primitive with no opts passed
-  # -----------------------------------------------
-  defp build_graph({:primitive, meta, [name, data]}, _assigns) do
-    graph_val = Macro.var(:graph_val, __MODULE__)
-    quote line: meta[:line] || 0 do
-      unquote(graph_val) = unquote(name)(unquote(graph_val), unquote(data))
-    end
-  end
-
-  # -----------------------------------------------
-  # rewrite slot
-  # -----------------------------------------------
-  defp build_graph({:slot, meta, args}, _assigns) do
-    quote line: meta[:line] || 0 do
-      {:slot, unquote(args)}
-    end
-  end
-
-  # -----------------------------------------------
-  # render the list of slot component passed to the
-  # outlet component if it matches the slot_name
-  # -----------------------------------------------
-  defp build_graph({:outlet, meta, [slot_name, opts]}, assigns) do
-    graph_val = Macro.var(:graph_val, __MODULE__)
-    {cmp, data} = assigns[:state][:data][:slots][slot_name] || {nil, nil}
-    quote line: meta[:line] || 0 do
-      unquote(graph_val) =
-        if not is_nil(unquote(cmp)) do
-          unquote(cmp)(unquote(graph_val), unquote(data), unquote(opts))
-        else
-          unquote(graph_val)
-        end
-    end
-  end
-
-  # -----------------------------------------------
-  # render the slot component for unnamed outlet
-  # used typically to render a list of components
-  # -----------------------------------------------
-  defp build_graph({:outlet, meta, [opts]}, assigns) do
-    graph_val = Macro.var(:graph_val, __MODULE__)
-    cmps = assigns[:state][:data][:slots] || nil
-    Enum.reduce(cmps, graph_val, fn {_k, [cmp, data, cmp_opts]}, g ->
-      quote line: meta[:line] || 0 do
-          Scenic.Primitives.group(unquote(g), fn g ->
-            unquote(cmp)(g, unquote(data), unquote(cmp_opts))
-          end, unquote(opts))
-      end
-    end)
-  end
-
-  # -----------------------------------------------
-  # render the slot component passed to the
-  # outlet component if it matches the slot_name
-  # -----------------------------------------------
-  # defp build_graph({:outlet, meta, [slot_name, opts]}, assigns) do
-  #   graph_val = Macro.var(:graph_val, __MODULE__)
-  #   match = assigns[:state][:data][:slots][slot_name] || nil
-  #   case match do
-  #     {cmp, data} ->
-  #       quote line: meta[:line] || 0 do
-  #         unquote(graph_val) =
-  #           unquote(cmp)(unquote(graph_val), unquote(data), unquote(opts))
-  #       end
-  #     cmp when is_list(cmp) ->
-  #         quote line: meta[:line] || 0 do
-  #           Enum.reduce(unquote(match), unquote(graph_val), fn {cmp, data, cmp_opts}, acc ->
-  #             unquote(cmp)(acc, data, cmp_opts)
-  #           end)
-  #         end
-  #     nil -> quote do unquote(graph_val) end
-  #     _ -> quote do unquote(graph_val) end
-  #   end
-  # end
-
-  # -----------------------------------------------
-  # ignore unhanded expressions
-  # -----------------------------------------------
-  defp build_graph(arg, _assigns), do: arg
-
-  def interpolate_component(graph, cmp_name, data, opts) do
-    quote bind_quoted: [graph: graph, cmp_name: cmp_name, data: data, opts: opts] do
-      cmp_name(graph, data, opts)
-    end
+    |> Macro.prewalk(&SnapFramework.Parser.Assigns.run(&1, assigns))
+    |> Macro.prewalk(&SnapFramework.Parser.Enumeration.run/1)
+    |> Macro.prewalk(&SnapFramework.Parser.Graph.run/1)
+    |> Macro.prewalk(&SnapFramework.Parser.Component.run/1)
+    |> Macro.prewalk(&SnapFramework.Parser.Primitive.run/1)
+    |> Macro.prewalk(&SnapFramework.Parser.Outlet.run(&1, assigns))
   end
 
   @doc false

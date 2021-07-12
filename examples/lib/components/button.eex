@@ -1,9 +1,8 @@
-<%= graph font_size: 20 %>
+<%= graph font: :roboto, font_size: 20 %>
 
-<%= primitive :rounded_rectangle,
-    {100, 50, 4}, id: :btn, fill: :blue
-%>
+<%= primitive :rounded_rectangle, {100, 50, 4}, id: :btn, fill: :blue %>
 
-<%= component :button_icon, "", [] do %>
-    <%= slot :icon, :text, "test" %>
-<% end %>
+<%= component :button_icon, "", [] do
+    slot :icon, :text, @state.data
+    slot :text, :text, @state.data
+end %>

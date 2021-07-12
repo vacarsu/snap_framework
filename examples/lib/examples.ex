@@ -11,7 +11,7 @@ defmodule Examples do
     Logger.debug(inspect(main_viewport_config))
     # start the application with the viewport
     children = [
-      {Scenic, viewports: [main_viewport_config]}
+      {Scenic, [main_viewport_config]}
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one)

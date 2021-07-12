@@ -2,19 +2,22 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
+config :scenic, :assets,
+  module: Examples.Assets,
+  alias: []
+
 # Configure the main viewport for the Scenic application
-config :examples, :viewport, %{
+config :examples, :viewport, [
   name: :main_viewport,
   size: {700, 600},
-  default_scene: {Examples.Scene.TestScene, nil},
-  drivers: [
-    %{
-      module: Scenic.Driver.Glfw,
-      name: :glfw,
-      opts: [resizeable: false, title: "examples"]
-    }
-  ]
-}
+  default_scene: Examples.Scene.TestScene,
+  drivers: [[
+    module: Scenic.Driver.Glfw,
+    name: :glfw,
+    title: "examples",
+    resizeable: false
+  ]]
+]
 
 config :logger, backends: [RingLogger]
 

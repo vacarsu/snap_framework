@@ -14,16 +14,12 @@ defmodule Examples.Scene.TestScene do
         {"Controls", :controls},
         {"Primitives", :primitives}
       ],
-      button_icon: :button_icon,
+      button_icon: :button_icons,
       test_clicked: false,
       dropdown_value: :dashboard,
       button_text: "test",
       text_value: "selected value <%= @state.dropdown_value %>",
-      buttons: [
-        {:button, "test", translate: {5, 5}},
-        {:button, "test_1", translate: {105, 5}},
-        {:button, "test_2", translate: {210, 5}}
-      ]
+      buttons: ["test", "test_1", "test_2"]
     }
 
   use_effect [state: [text_value: :any]], [
@@ -41,12 +37,12 @@ defmodule Examples.Scene.TestScene do
     delete: [:test_btn]
   ]
 
-  def process_event({:value_changed, :dropdown, value}, _, state) do
+  def process_event({:value_changed, :dropdown, value}, _, scene) do
     state = %{
-      state |
+      scene.assigns.state |
       dropdown_value: value,
       text_value: "selected value #{value}"
     }
-    {:noreply, state}
+    {:noreply, assign(scene, state: state)}
   end
 end
