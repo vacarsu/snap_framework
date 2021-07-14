@@ -6,7 +6,7 @@ defmodule SnapFramework.MixProject do
       app: :snap_framework,
       version: "0.1.0",
       elixir: "~> 1.12",
-      build_embedded: true,
+      build_embedded: false,
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]

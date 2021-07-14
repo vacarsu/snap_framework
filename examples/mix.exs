@@ -6,7 +6,6 @@ defmodule Examples.MixProject do
       app: :examples,
       version: "0.1.0",
       elixir: "~> 1.7",
-      build_embedded: true,
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
