@@ -68,19 +68,19 @@ defmodule SnapFramework.Parser.Component do
     Keyword.put([], slot_name, {name, data, opts})
   end
 
-  def build_slot_list([{:=, [], [_, {:slot, [name, data]}]}, _]) do
+  def build_slot_list([{:=, [], [_, {:slot, _, [name, data]}]}, _]) do
     Keyword.put([], :slot, {name, data, nil})
   end
 
-  def build_slot_list([{:=, [], [_, {:slot, [name, data, opts]}]}, _]) when is_list(opts) do
+  def build_slot_list([{:=, [], [_, {:slot, _, [name, data, opts]}]}, _]) when is_list(opts) do
     Keyword.put([], :slot, {name, data, opts})
   end
 
-  def build_slot_list([{:=, [], [_, {:slot, [slot_name, name, data]}]}, _]) do
+  def build_slot_list([{:=, [], [_, {:slot, _, [slot_name, name, data]}]}, _]) do
     Keyword.put([], slot_name, {name, data, nil})
   end
 
-  def build_slot_list([{:=, [], [_, {:slot, [slot_name, name, data, opts]}]}, _]) do
+  def build_slot_list([{:=, [], [_, {:slot, _, [slot_name, name, data, opts]}]}, _]) do
     Keyword.put([], slot_name, {name, data, opts})
   end
 

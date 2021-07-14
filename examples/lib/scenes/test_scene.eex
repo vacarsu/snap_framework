@@ -9,9 +9,9 @@
 %>
 
 <%= component :button_list, "", id: :button_list, translate: {20, 200} do %>
-    <%= for button <- ["btn 1", "btn 2", "btn 3"] do %>
-        <%= slot :button, button %>
-    <% end %>
+    <%= slot :button, "btn 1" %>
+    <%= slot :button, "btn 2" %>
+    <%= slot :button, "btn 3" %>
 <% end %>
 
 <%= component :dropdown, {
