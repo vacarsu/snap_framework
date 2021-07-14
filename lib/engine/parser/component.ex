@@ -68,25 +68,25 @@ defmodule SnapFramework.Parser.Component do
     Keyword.put([], slot_name, {name, data, opts})
   end
 
-  def build_slot_list([{:=, [], [_, {:slot, _, [name, data]}]}, _]) do
+  def build_slot_list({:=, [], [_, {:slot, _, [name, data]}]}) do
     Keyword.put([], :slot, {name, data, nil})
   end
 
-  def build_slot_list([{:=, [], [_, {:slot, _, [name, data, opts]}]}, _]) when is_list(opts) do
+  def build_slot_list({:=, [], [_, {:slot, _, [name, data, opts]}]}) when is_list(opts) do
     Keyword.put([], :slot, {name, data, opts})
   end
 
-  def build_slot_list([{:=, [], [_, {:slot, _, [slot_name, name, data]}]}, _]) do
+  def build_slot_list({:=, [], [_, {:slot, _, [slot_name, name, data]}]}) do
     Keyword.put([], slot_name, {name, data, nil})
   end
 
-  def build_slot_list([{:=, [], [_, {:slot, _, [slot_name, name, data, opts]}]}, _]) do
+  def build_slot_list({:=, [], [_, {:slot, _, [slot_name, name, data, opts]}]}) do
     Keyword.put([], slot_name, {name, data, opts})
   end
 
-  def build_slot_list({:=, [], [{_, _, _}, slots]}) do
-    Enum.flat_map(slots, &build_slot_list/1)
-  end
+  # def build_slot_list({:=, [], [{_, _, _}, slots]}) do
+  #   Enum.flat_map(slots, &build_slot_list/1)
+  # end
 
   def build_slot_list(_ast) do
     []
