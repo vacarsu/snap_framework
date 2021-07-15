@@ -4,12 +4,12 @@ defmodule SnapFramework.Macros do
 
   defmacro input_handler do
     quote do
-      def handle_input(event, context, scene) do
-        {response_type, new_scene} = scene.assigns.state.module.process_input(event, context, scene)
-        # diff = diff_state(scene.assigns.state, new_scene.assigns.state)
-        # new_scene = process_effects(new_scene, diff)
-        # push_graph(new_scene, new_scene.assigns.graph)
-        new_scene = scene.assigns.state.module.recompile(new_scene)
+      def handle_input(input, id, scene) do
+        {response_type, new_scene} = scene.assigns.state.module.process_input(input, id, scene)
+        diff = diff_state(scene.assigns.state, new_scene.assigns.state)
+        new_scene = process_effects(new_scene, diff)
+        push_graph(new_scene, new_scene.assigns.graph)
+        # new_scene = scene.assigns.state.module.recompile(new_scene)
         {response_type, new_scene}
       end
     end
@@ -19,37 +19,37 @@ defmodule SnapFramework.Macros do
     quote do
       def handle_info(msg, scene) do
         {response_type, new_scene} = scene.assigns.state.module.process_info(msg, scene)
-        # diff = diff_state(scene.assigns.state, new_scene.assigns.state)
-        # new_scene = process_effects(new_scene, diff)
-        # push_graph(new_scene, new_scene.assigns.graph)
-        new_scene = scene.assigns.state.module.recompile(new_scene)
+        diff = diff_state(scene.assigns.state, new_scene.assigns.state)
+        new_scene = process_effects(new_scene, diff)
+        push_graph(new_scene, new_scene.assigns.graph)
+        # new_scene = scene.assigns.state.module.recompile(new_scene)
         {response_type, new_scene}
       end
 
       def handle_call(msg, from, scene) do
         {response_type, new_scene} = scene.assigns.state.module.process_call(msg, from, scene)
-        # diff = diff_state(scene.assigns.state, new_scene.assigns.state)
-        # new_scene = process_effects(new_scene, diff)
-        # push_graph(new_scene, new_scene.assigns.graph)
-        new_scene = scene.assigns.state.module.recompile(new_scene)
+        diff = diff_state(scene.assigns.state, new_scene.assigns.state)
+        new_scene = process_effects(new_scene, diff)
+        push_graph(new_scene, new_scene.assigns.graph)
+        # new_scene = scene.assigns.state.module.recompile(new_scene)
         {response_type, new_scene}
       end
 
       def handle_cast(msg, scene) do
         {response_type, new_scene} = scene.assigns.state.module.process_cast(msg, scene)
-        # diff = diff_state(scene.assigns.state, new_scene.assigns.state)
-        # new_scene = process_effects(new_scene, diff)
-        # push_graph(new_scene, new_scene.assigns.graph)
-        new_scene = scene.assigns.state.module.recompile(new_scene)
+        diff = diff_state(scene.assigns.state, new_scene.assigns.state)
+        new_scene = process_effects(new_scene, diff)
+        push_graph(new_scene, new_scene.assigns.graph)
+        # new_scene = scene.assigns.state.module.recompile(new_scene)
         {response_type, new_scene}
       end
 
       def handle_event(event, from_pid, scene) do
         {response_type, new_scene} = scene.assigns.state.module.process_event(event, from_pid, scene)
-        # diff = diff_state(scene.assigns.state, new_scene.assigns.state)
-        # new_scene = process_effects(new_scene, diff)
-        # push_graph(new_scene, new_scene.assigns.graph)
-        new_scene = scene.assigns.state.module.recompile(new_scene)
+        diff = diff_state(scene.assigns.state, new_scene.assigns.state)
+        new_scene = process_effects(new_scene, diff)
+        push_graph(new_scene, new_scene.assigns.graph)
+        # new_scene = scene.assigns.state.module.recompile(new_scene)
         {response_type, new_scene}
       end
     end
@@ -84,12 +84,21 @@ defmodule SnapFramework.Macros do
       defp run_effect(effect, scene) do
         Enum.reduce(effect, scene, fn {e_key, list}, acc ->
           case e_key do
+            :set -> Enum.reduce(list, acc, fn item, s_acc -> set(s_acc, item) end)
             :add -> Enum.reduce(list, acc, fn item, s_acc -> add(s_acc, item) end)
             :modify -> Enum.reduce(list, acc, fn item, s_acc -> modify(s_acc, item) end)
             :delete -> Enum.reduce(list, acc, fn item, s_acc -> delete(s_acc, item) end)
             _ -> acc
           end
         end)
+      end
+
+      defp set(scene, {key, value}) do
+        Logger.debug("running set effect")
+        state = Map.put(scene.assigns.state, key, value)
+        new_scene = assign(scene, state: state)
+        diff = diff_state(scene.assigns.state, new_scene.assigns.state)
+        process_effects(new_scene, diff)
       end
 
       defp add(scene, {cmp_fun, state_key, opts}) do

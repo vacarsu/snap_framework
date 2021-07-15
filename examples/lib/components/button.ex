@@ -8,23 +8,22 @@ defmodule Examples.Component.Button do
     state: %{icon: "test", text: "test"},
     opts: []
 
-  defcomponent :button, :any
+  defcomponent :button, :string
 
   def setup(state) do
     Logger.debug(inspect state)
-    # state = %{state | icon: data, text: data}
+    state = %{state | icon: state.data, text: state.data}
     Logger.debug("button setup #{inspect(state)}")
     state
   end
 
-  def process_input({:cursor_button, {0, :press, _, _}}, :btn, scene) do
-    Logger.debug("inputed")
-    id = scene.assigns.state.opts[:id]
-    send_event({:click, id})
+  def process_input({:cursor_button, {0, :release, _, _}}, id, scene) do
+    Logger.debug(inspect scene.assigns.state.opts[:id])
+    send_parent_event(scene, {:click, scene.assigns.state.opts[:id]})
     {:noreply, scene}
   end
 
-  def process_input(_, _context, scene) do
+  def process_input(_, _, scene) do
     {:noreply, scene}
   end
 end

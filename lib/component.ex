@@ -75,7 +75,6 @@ defmodule SnapFramework.Component do
 
     quote location: :keep do
       def init(scene, data, opts \\ []) do
-        Logger.debug(inspect data, pretty: true)
         scene =
           scene
           |> assign(
@@ -86,27 +85,34 @@ defmodule SnapFramework.Component do
             |> setup()
           )
 
-        scene = recompile(scene)
-
-        # graph =
-        #   if not @preload do
-        #     SnapFramework.Engine.compile(@template, [assigns: scene.assigns], info, __ENV__)
-        #   else
-        #     SnapFramework.Engine.compile_string(unquote(file), [assigns: scene.assigns], info, __ENV__)
-        #   end
-
-        {:ok, scene}
+        {:ok, recompile(scene)}
       end
 
       def recompile(scene) do
         info =
           Keyword.merge(
-            [assigns: [state: scene.assigns.state], engine: SnapFramework.Engine],
-            [file: unquote(caller.file), line: unquote(caller.line), trim: true]
+            [
+              assigns: [
+                state: scene.assigns.state,
+                children: scene.assigns.state.opts[:children]
+              ],
+              engine: SnapFramework.Engine
+            ],
+            [
+              file: unquote(caller.file),
+              line: unquote(caller.line), trim: true
+            ]
           )
 
-        graph =
-          SnapFramework.Engine.compile_string(unquote(file), [assigns: [state: scene.assigns.state]], info, __ENV__)
+        compiled_list =
+          SnapFramework.Engine.compile_string(unquote(file), [
+            assigns: [
+              state: scene.assigns.state,
+              children: scene.assigns.state.opts[:children]
+            ]
+          ], info, __ENV__)
+
+        graph = build_graph(compiled_list)
 
         scene
         |> assign(graph: graph)

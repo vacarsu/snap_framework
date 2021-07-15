@@ -8,5 +8,5 @@ defmodule Examples.Component.ButtonList do
     state: %{slot: nil, slot_cmp: nil},
     opts: []
 
-  defcomponent :button_list, :list
+  defcomponent :button_list, :any
 end

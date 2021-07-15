@@ -7,88 +7,69 @@ defmodule SnapFramework.Parser.Component do
   end
 
   def parse({:component, meta, [name, data, opts]}) when is_list(opts) do
-    graph_val = Macro.var(:graph_val, SnapFramework.Engine)
     quote line: meta[:line] || 0 do
-      unquote(graph_val) = unquote(name)(unquote(graph_val), unquote(data), unquote(opts))
+      [
+        type: :component,
+        module: unquote(name),
+        data: unquote(data),
+        opts: unquote(opts)
+      ]
     end
   end
 
   def parse({:component, meta, [name, opts]}) when is_list(opts) do
-    graph_val = Macro.var(:graph_val, SnapFramework.Engine)
     quote line: meta[:line] || 0 do
-      unquote(graph_val) = unquote(name)(unquote(graph_val), nil, unquote(opts))
+      [
+        type: :component,
+        module: unquote(name),
+        data: nil,
+        opts: unquote(opts)
+      ]
     end
   end
 
   def parse({:component, meta, [name, data]}) do
-    graph_val = Macro.var(:graph_val, SnapFramework.Engine)
     quote line: meta[:line] || 0 do
-      unquote(graph_val) = unquote(name)(unquote(graph_val), unquote(data), [])
+      [
+        type: :component,
+        module: unquote(name),
+        data: unquote(data),
+        opts: []
+      ]
     end
   end
 
   def parse({:component, meta, [name, data, opts, [do: {:__block__, [], block}]]}) do
-    graph_val = Macro.var(:graph_val, SnapFramework.Engine)
-    Logger.debug("block after enumeration #{inspect block}}")
-    slots =
+    children =
       block
-      |> Enum.flat_map(fn ast ->
-        Logger.debug(inspect ast)
-        ast
-        |> build_slot_list()
-      end)
+      |> Enum.reduce([], &build_child_list/2)
 
-    Logger.debug(inspect slots)
-
-    data = [slots: slots, data: data]
     quote line: meta[:line] || 0 do
-      unquote(graph_val) = unquote(name)(
-        unquote(graph_val),
-        unquote(Macro.escape(data)),
-        unquote(opts)
-      )
+      [
+        type: :component,
+        module: unquote(name),
+        data: unquote(data),
+        opts: unquote(opts),
+        children: unquote(children)
+      ]
     end
   end
 
   def parse(ast), do: ast
 
-  def build_slot_list({:slot, _, [name, data]}) do
-    Keyword.put([], :slot, {name, data, nil})
+  def build_child_list({:=, [], [_, component]}, acc) do
+    List.insert_at(acc, length(acc), component)
   end
 
-  def build_slot_list({:slot, _, [name, data, opts]}) when is_list(opts) do
-    Keyword.put([], :slot, {name, data, opts})
+  def build_child_list({type, _, [name, data, opts]}, acc) do
+    List.insert_at(acc, length(acc), [type: type, module: name, data: data, opts: opts])
   end
 
-  def build_slot_list({:slot, _, [slot_name, name, data]}) do
-    Keyword.put([], slot_name, {name, data, nil})
+  def build_child_list({type, _, [name, data]}, acc) do
+    List.insert_at(acc, length(acc), [type: type, module: name, data: data, opts: []])
   end
 
-  def build_slot_list({:slot, _, [slot_name, name, data, opts]}) do
-    Keyword.put([], slot_name, {name, data, opts})
-  end
-
-  def build_slot_list({:=, [], [_, {:slot, _, [name, data]}]}) do
-    Keyword.put([], :slot, {name, data, nil})
-  end
-
-  def build_slot_list({:=, [], [_, {:slot, _, [name, data, opts]}]}) when is_list(opts) do
-    Keyword.put([], :slot, {name, data, opts})
-  end
-
-  def build_slot_list({:=, [], [_, {:slot, _, [slot_name, name, data]}]}) do
-    Keyword.put([], slot_name, {name, data, nil})
-  end
-
-  def build_slot_list({:=, [], [_, {:slot, _, [slot_name, name, data, opts]}]}) do
-    Keyword.put([], slot_name, {name, data, opts})
-  end
-
-  # def build_slot_list({:=, [], [{_, _, _}, slots]}) do
-  #   Enum.flat_map(slots, &build_slot_list/1)
-  # end
-
-  def build_slot_list(_ast) do
-    []
+  def build_child_list(_ast, acc) do
+    acc
   end
 end

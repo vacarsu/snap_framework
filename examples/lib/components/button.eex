@@ -1,8 +1,10 @@
 <%= graph font: :roboto, font_size: 20 %>
 
-<%= primitive :rounded_rectangle, {100, 50, 4}, id: :btn, fill: :blue %>
+<%= primitive Scenic.Primitive.RoundedRectangle, {100, 50, 4}, fill: :blue %>
 
-<%= component :button_icon, "", [] do
-    slot :icon, :text, @state.data
-    slot :text, :text, @state.data
+<%= component Examples.Component.ButtonIcon, "", translate: {10, 20} do
+    primitive Scenic.Primitive.Text, @state.text, translate: {50, 0}
+    primitive Scenic.Primitive.Text, @state.icon, translate: {0, 0}
 end %>
+
+<%= primitive Scenic.Primitive.RoundedRectangle, {100, 50, 4}, id: :btn, fill: :clear, input: true %>

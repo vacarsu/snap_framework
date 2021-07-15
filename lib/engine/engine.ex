@@ -12,19 +12,18 @@ defmodule SnapFramework.Engine do
   def compile(path, assigns, info, _env) do
     quoted = EEx.compile_file(path, info)
     {result, _binding} = Code.eval_quoted(quoted, assigns)
-    List.last(result)
+    result
   end
 
   def compile_string(string, assigns, info, env) do
     quoted = EEx.compile_string(string, info)
     {result, _binding} = Code.eval_quoted(quoted, assigns, env)
     Logger.debug(inspect List.last(result), pretty: true)
-    List.last(result)
+    result
   end
 
   @doc false
   def init(opts) do
-    Logger.info(inspect(opts, pretty: true))
     %{
       iodata: [],
       dynamic: [],
@@ -85,10 +84,9 @@ defmodule SnapFramework.Engine do
   ## Traversal
 
   defp traverse(expr, assigns) do
-    Logger.debug(inspect expr, pretty: true)
     expr
     |> Macro.prewalk(&SnapFramework.Parser.Assigns.run(&1, assigns))
-    |> Macro.prewalk(&SnapFramework.Parser.Enumeration.run/1)
+    # |> Macro.prewalk(&SnapFramework.Parser.Enumeration.run/1)
     |> Macro.prewalk(&SnapFramework.Parser.Graph.run/1)
     |> Macro.prewalk(&SnapFramework.Parser.Component.run/1)
     |> Macro.prewalk(&SnapFramework.Parser.Primitive.run/1)

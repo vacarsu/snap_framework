@@ -6,7 +6,7 @@ defmodule SnapFramework.Scene do
   @callback process_call(msg :: map, from :: GenServer.from, scene :: map) :: {term :: atom, scene :: map}
   @callback process_info(msg :: any, scene :: map) :: {term :: atom, scene :: map}
   @callback process_cast(msg :: any, scene :: map) :: {term :: atom, scene:: map}
-  @callback process_input(input :: any, context :: any, scene :: map) :: {term :: atom, scene :: map}
+  @callback process_input(input :: any, id :: atom, scene :: map) :: {term :: atom, scene :: map}
   @callback process_event(event :: any, from_pid :: any, scene :: map) :: {term :: atom, scene :: map}
   @callback setup(state :: map()) :: map()
 
@@ -32,12 +32,12 @@ defmodule SnapFramework.Scene do
 
       @before_compile SnapFramework.Scene
 
-      def terminate(_, state), do: {:noreply, state}
-      def process_call(msg, from, state), do: {:noreply, state}
-      def process_info(msg, state), do: {:noreply, state}
-      def process_cast(msg, state), do: {:noreply, state}
-      def process_input(input, context, state), do: {:noreply, state}
-      def process_event(event, from_pid, state), do: {:cont, state}
+      def terminate(_, scene), do: {:noreply, scene}
+      def process_call(msg, from, scene), do: {:noreply, scene}
+      def process_info(msg, scene), do: {:noreply, scene}
+      def process_cast(msg, scene), do: {:noreply, scene}
+      def process_input(input, id, scene), do: {:noreply, scene}
+      def process_event(event, from_pid, scene), do: {:cont, scene}
       def setup(state), do: state
 
       defoverridable process_call: 3,
@@ -69,12 +69,12 @@ defmodule SnapFramework.Scene do
       @using_effects false
       @effects_registry %{}
 
-      def terminate(_, state), do: {:noreply, state}
-      def process_call(msg, from, state), do: {:noreply, state}
-      def process_info(msg, state), do: {:noreply, state}
-      def process_cast(msg, state), do: {:noreply, state}
-      def process_input(input, context, state), do: {:noreply, state}
-      def process_event(event, from_pid, state), do: {:cont, state}
+      def terminate(_, scene), do: {:noreply, scene}
+      def process_call(msg, from, scene), do: {:noreply, scene}
+      def process_info(msg, scene), do: {:noreply, scene}
+      def process_cast(msg, scene), do: {:noreply, scene}
+      def process_input(input, id, scene), do: {:noreply, scene}
+      def process_event(event, from_pid, scene), do: {:cont, scene}
       def setup(state), do: state
 
       defoverridable process_call: 3,
@@ -94,13 +94,13 @@ defmodule SnapFramework.Scene do
       end
 
       for cmp_id <- ids do
-        def process_event({:click, unquote(cmp_id)} = event, _from_pid, state) do
-          state =
-            Enum.reduce(unquote(effects), state, fn action, acc ->
+        def process_event({:click, unquote(cmp_id)} = event, _from_pid, scene) do
+          scene =
+            Enum.reduce(unquote(effects), scene, fn action, acc ->
               case action do
                 {:set, set_actions} ->
-                  Enum.reduce(set_actions, acc, fn {key, value}, s_acc ->
-                    Map.put(s_acc, key, value)
+                  Enum.reduce(set_actions, acc, fn item, s_acc ->
+                    set(s_acc, item)
                   end)
                 {:add, add_actions} -> Enum.reduce(add_actions, acc, fn item, s_acc -> add(s_acc, item) end)
                 {:modify, mod_actions} ->
@@ -111,10 +111,10 @@ defmodule SnapFramework.Scene do
               end
             end)
           case unquote(term) do
-            :noreply -> {unquote(term), state}
-            :cont -> {unquote(term), event, state}
-            :halt -> {unquote(term), state}
-            _ -> {unquote(term), state}
+            :noreply -> {unquote(term), scene}
+            :cont -> {unquote(term), event, scene}
+            :halt -> {unquote(term), scene}
+            _ -> {unquote(term), scene}
           end
         end
       end
@@ -164,9 +164,7 @@ defmodule SnapFramework.Scene do
               |> setup
           )
 
-        scene = recompile(scene)
-
-        {:ok, scene}
+        {:ok, recompile(scene)}
       end
 
       SnapFramework.Macros.effect_handlers()
@@ -178,8 +176,10 @@ defmodule SnapFramework.Scene do
             [file: unquote(caller.file), line: unquote(caller.line), trim: true]
           )
 
-        graph =
+        compiled_list =
           SnapFramework.Engine.compile_string(unquote(file), [assigns: [state: scene.assigns.state]], info, __ENV__)
+
+        graph = build_graph(compiled_list)
 
         scene
         |> assign(graph: graph)
@@ -188,25 +188,69 @@ defmodule SnapFramework.Scene do
     end
   end
 
-  defmacro slot(graph, cmp, data) do
-    Logger.debug("component slot hit")
-    Logger.debug(inspect data)
-    data = Macro.expand_once(data, __CALLER__)
-    Logger.debug(inspect data)
-    quote do
-      var!(graph_val) =
-        unquote(cmp)(unquote(graph), unquote(data))
-    end
+  def build_graph(list) do
+    Logger.debug(inspect list, pretty: true)
+    Enum.reduce(list, %{}, fn item, acc ->
+      if item != "\n" do
+        case item do
+          [type: :graph, opts: opts] -> Scenic.Graph.build(opts)
+
+          [type: :component, module: module, data: data, opts: opts] ->
+            acc |> module.add_to_graph(data, opts)
+
+          [type: :component, module: module, data: data, opts: opts, children: children] ->
+            acc |> module.add_to_graph(data, Keyword.put_new(opts, :children, children))
+
+          [type: :primitive, module: module, data: data, opts: opts] ->
+            acc |> module.add_to_graph(data, opts)
+
+          list ->
+            if is_list(list) do
+              Enum.reduce(list, acc, fn child, acc ->
+                case child do
+                  [type: :graph, opts: opts] -> Scenic.Graph.build(opts)
+
+                  [type: :component, module: module, data: data, opts: opts] ->
+                    acc |> module.add_to_graph(data, opts)
+
+                  [type: :component, module: module, data: data, opts: opts, children: children] ->
+                    acc |> module.add_to_graph(data, Keyword.put_new(opts, :children, children))
+
+                  [type: :primitive, module: module, data: data, opts: opts] ->
+                    acc |> module.add_to_graph(data, opts)
+
+                  _ -> acc
+                end
+              end)
+            else
+              acc
+            end
+        end
+      else
+        acc
+      end
+    end)
   end
 
-  defmacro slot(graph, cmp, data, opts) do
-    Logger.debug("component slot hit")
-    Logger.debug(inspect data)
-    data = Macro.expand_once(data, __CALLER__)
-    Logger.debug(inspect data)
-    quote do
-      var!(graph_val) =
-        unquote(cmp)(unquote(graph), unquote(data), unquote(opts))
-    end
-  end
+  # defmacro slot(graph, cmp, data) do
+  #   Logger.debug("component slot hit")
+  #   Logger.debug(inspect data)
+  #   data = Macro.expand_once(data, __CALLER__)
+  #   Logger.debug(inspect data)
+  #   quote do
+  #     var!(graph_val) =
+  #       unquote(cmp)(unquote(graph), unquote(data))
+  #   end
+  # end
+
+  # defmacro slot(graph, cmp, data, opts) do
+  #   Logger.debug("component slot hit")
+  #   Logger.debug(inspect data)
+  #   data = Macro.expand_once(data, __CALLER__)
+  #   Logger.debug(inspect data)
+  #   quote do
+  #     var!(graph_val) =
+  #       unquote(cmp)(unquote(graph), unquote(data), unquote(opts))
+  #   end
+  # end
 end

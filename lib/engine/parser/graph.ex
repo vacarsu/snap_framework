@@ -7,16 +7,20 @@ defmodule SnapFramework.Parser.Graph do
   end
 
   def parse({:graph, meta, [opts]}) do
-    graph_val = Macro.var(:graph_val, SnapFramework.Engine)
     quote line: meta[:line] || 0 do
-      unquote(graph_val) = Scenic.Graph.build(unquote(opts))
+      [
+        type: :graph,
+        opts: unquote(opts)
+      ]
     end
   end
 
   def parse({:graph, meta, []}) do
-    graph_val = Macro.var(:graph_val, SnapFramework.Engine)
     quote line: meta[:line] || 0 do
-      unquote(graph_val) = Scenic.Graph.build()
+      [
+        type: :graph,
+        opts: []
+      ]
     end
   end
 

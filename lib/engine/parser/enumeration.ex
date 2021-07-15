@@ -17,14 +17,12 @@ defmodule SnapFramework.Parser.Enumeration do
     ]
   }
   ]}) do
-    Logger.debug("enumerating")
     for cmp_data <- Macro.expand(list, SnapFramework.Engine) do
       Macro.prewalk(block, &handle_block(&1, cmp_data))
     end
   end
 
   def parse({:for, _meta, [{:<-, _, [_var, arg]}, [do: {:__block__, [], block}]]}) do
-    Logger.debug("enumerating")
     for cmp_data <- Macro.expand(arg, SnapFramework.Engine) do
       Macro.prewalk(block, &handle_block(&1, cmp_data))
     end
@@ -33,21 +31,18 @@ defmodule SnapFramework.Parser.Enumeration do
   def parse(ast), do: ast
 
   defp handle_block({:slot, meta, [cmp, _cmp_data]}, cmp_data) do
-    Logger.debug("handling slot block")
     quote line: meta[:line] || 0 do
       {:slot, [unquote(cmp), unquote(cmp_data)]}
     end
   end
 
   defp handle_block({:slot, meta, [cmp, _cmp_data, opts]}, cmp_data) do
-    Logger.debug("handling slot block")
     quote line: meta[:line] || 0 do
       {:slot, [unquote(cmp), unquote(cmp_data), unquote(opts)]}
     end
   end
 
   defp handle_block({:arg3, [], SnapFrameWork.Engine}, _cmp_data) do
-    Logger.debug("handling arg")
     quote do
     end
   end

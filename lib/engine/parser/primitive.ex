@@ -7,23 +7,35 @@ defmodule SnapFramework.Parser.Primitive do
   end
 
   def parse({:primitive, meta, [name, data, opts]}) when is_list(opts) do
-    graph_val = Macro.var(:graph_val, SnapFramework.Engine)
     quote line: meta[:line] || 0 do
-      unquote(graph_val) = unquote(name)(unquote(graph_val), unquote(data), unquote(opts))
+      [
+        type: :primitive,
+        module: unquote(name),
+        data: unquote(data),
+        opts: unquote(opts)
+      ]
     end
   end
 
   def parse({:primitive, meta, [name, opts]}) when is_list(opts) do
-    graph_val = Macro.var(:graph_val, SnapFramework.Engine)
     quote line: meta[:line] || 0 do
-      unquote(graph_val) = unquote(name)(unquote(graph_val), nil, unquote(opts))
+      [
+        type: :primitive,
+        module: unquote(name),
+        data: nil,
+        opts: unquote(opts)
+      ]
     end
   end
 
   def parse({:primitive, meta, [name, data]}) do
-    graph_val = Macro.var(:graph_val, SnapFramework.Engine)
     quote line: meta[:line] || 0 do
-      unquote(graph_val) = unquote(name)(unquote(graph_val), unquote(data), [])
+      [
+        type: :primitive,
+        module: unquote(name),
+        data: unquote(data),
+        opts: []
+      ]
     end
   end
 

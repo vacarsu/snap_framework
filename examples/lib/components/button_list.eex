@@ -1,3 +1,3 @@
 <%= graph font_size: 20 %>
 
-<%= outlet translate: {20, 20} %>
+<%= @children %>

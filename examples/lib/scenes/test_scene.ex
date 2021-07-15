@@ -3,6 +3,8 @@ defmodule Examples.Scene.TestScene do
   import Scenic.Primitives, only: [text: 3]
   import Examples.Component.Button, only: [button: 3]
   import Examples.Component.ButtonList, only: [button_list: 3]
+  alias Scenic.Component.Input.Dropdown
+  alias Scenic.Primitive.Text
   require Logger
 
   use SnapFramework.Scene,
@@ -29,7 +31,7 @@ defmodule Examples.Scene.TestScene do
   ]
 
   use_effect [state: [dropdown_value: :primitives]], [
-    add: [{&button/3, nil, id: :test_btn, translate: {200, 20}}],
+    add: [{&button/3, :button_text, id: :test_btn, translate: {200, 20}}],
   ]
 
   use_effect [on_click: [:test_btn]], :noreply, [
