@@ -27,12 +27,12 @@ defmodule SnapFramework.Macros do
       end
 
       def handle_call(msg, from, scene) do
-        {response_type, new_scene} = scene.assigns.state.module.process_call(msg, from, scene)
+        {response_type, res, new_scene} = scene.assigns.state.module.process_call(msg, from, scene)
         diff = diff_state(scene.assigns.state, new_scene.assigns.state)
         new_scene = process_effects(new_scene, diff)
         push_graph(new_scene, new_scene.assigns.graph)
         # new_scene = scene.assigns.state.module.recompile(new_scene)
-        {response_type, new_scene}
+        {response_type, res, new_scene}
       end
 
       def handle_cast(msg, scene) do
