@@ -3,12 +3,12 @@ defmodule SnapFramework.Component do
   alias Scenic.Primitive
   require Logger
 
-  defmacro __using__([name: name, template: template, state: state, opts: opts]) do
+  defmacro __using__([name: name, template: template, assigns: assigns, opts: opts]) do
     quote do
       use SnapFramework.Scene,
         name: unquote(name),
         template: unquote(template),
-        state: unquote(state),
+        assigns: unquote(assigns),
         opts: unquote(opts)
 
       import SnapFramework.Component
@@ -17,7 +17,7 @@ defmodule SnapFramework.Component do
       require EEx
       require Logger
 
-      Module.register_attribute(__MODULE__, :state, persist: true)
+      Module.register_attribute(__MODULE__, :assigns, persist: true)
 
       Module.register_attribute(__MODULE__, :preload, persist: true)
       @preload unquote(opts[:preload]) || true
@@ -75,27 +75,25 @@ defmodule SnapFramework.Component do
 
     quote location: :keep do
       def init(scene, data, opts \\ []) do
+        assigns = Keyword.merge(@assigns, [
+          module: unquote(caller.module),
+          data: data,
+          opts: opts,
+          children: opts[:children]
+        ])
         scene =
           scene
-          |> assign(
-            state: @state
-            |> Map.put_new(:module, unquote(caller.module))
-            |> Map.put_new(:data, data)
-            |> Map.put_new(:opts, opts)
-          )
+          |> assign(assigns)
           |> setup()
 
-        {:ok, recompile(scene)}
+        {:ok, compile(scene)}
       end
 
-      def recompile(scene) do
+      def compile(scene) do
         info =
           Keyword.merge(
             [
-              assigns: [
-                state: scene.assigns.state,
-                children: scene.assigns.state.opts[:children]
-              ],
+              assigns: scene.assigns,
               engine: SnapFramework.Engine
             ],
             [
@@ -106,10 +104,7 @@ defmodule SnapFramework.Component do
 
         compiled_list =
           SnapFramework.Engine.compile_string(unquote(file), [
-            assigns: [
-              state: scene.assigns.state,
-              children: scene.assigns.state.opts[:children]
-            ]
+            assigns: scene.assigns
           ], info, __ENV__)
 
         graph = build_graph(compiled_list)

@@ -5,19 +5,19 @@ defmodule Examples.Component.Button do
   use SnapFramework.Component,
     name: :button,
     template: "lib/components/button.eex",
-    state: %{icon: "test", text: "test"},
+    assigns: [icon: "test", text: "test"],
     opts: []
 
   defcomponent :button, :string
 
   def setup(scene) do
     Logger.debug(inspect scene)
-    scene |> assign(state: %{scene.assigns.state | icon: scene.assigns.state.data, text: scene.assigns.state.data})
+    assign(scene, icon: scene.assigns.data, text: scene.assigns.data)
   end
 
   def process_input({:cursor_button, {0, :release, _, _}}, id, scene) do
-    Logger.debug(inspect scene.assigns.state.opts[:id])
-    send_parent_event(scene, {:click, scene.assigns.state.opts[:id]})
+    Logger.debug(inspect scene.assigns.opts[:id])
+    send_parent_event(scene, {:click, scene.assigns.opts[:id]})
     {:noreply, scene}
   end
 

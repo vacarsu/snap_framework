@@ -5,7 +5,7 @@ defmodule Examples.Component.ButtonList do
   use SnapFramework.Component,
     name: :button_list,
     template: "lib/components/button_list.eex",
-    state: %{slot: nil, slot_cmp: nil},
+    assigns: [slot: nil, slot_cmp: nil],
     opts: []
 
   defcomponent :button_list, :any

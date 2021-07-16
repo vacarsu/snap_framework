@@ -10,7 +10,7 @@ defmodule Examples.Scene.TestScene do
   use SnapFramework.Scene,
     name: "test_scene",
     template: "lib/scenes/test_scene.eex",
-    state: %{
+    assigns: [
       dropdown_opts: [
         {"Dashboard", :dashboard},
         {"Controls", :controls},
@@ -22,15 +22,17 @@ defmodule Examples.Scene.TestScene do
       button_text: "test",
       text_value: "selected value <%= @state.dropdown_value %>",
       buttons: ["test", "test_1", "test_2"]
-    }
+    ]
 
-  use_effect [state: [text_value: :any]], [
+  watch [:dropdown_value]
+
+  use_effect [assigns: [text_value: :any]], [
     modify: [
-      dropdown_value_text: {&text/3, {:state, [:text_value]}}
+      dropdown_value_text: {&text/3, {:assigns, [:text_value]}}
     ]
   ]
 
-  use_effect [state: [dropdown_value: :primitives]], [
+  use_effect [assigns: [dropdown_value: :primitives]], [
     add: [{&button/3, :button_text, id: :test_btn, translate: {200, 20}}],
   ]
 
@@ -40,11 +42,6 @@ defmodule Examples.Scene.TestScene do
   ]
 
   def process_event({:value_changed, :dropdown, value}, _, scene) do
-    state = %{
-      scene.assigns.state |
-      dropdown_value: value,
-      text_value: "selected value #{value}"
-    }
-    {:noreply, assign(scene, state: state)}
+    {:noreply, assign(scene, dropdown_value: value, text_value: "selected value #{value}")}
   end
 end

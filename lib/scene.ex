@@ -10,7 +10,7 @@ defmodule SnapFramework.Scene do
   @callback process_event(event :: any, from_pid :: any, scene :: map) :: {term :: atom, scene :: map}
   @callback setup(state :: map()) :: map()
 
-  defmacro __using__(name: name, template: template, state: state) do
+  defmacro __using__(name: name, template: template, assigns: assigns) do
     quote do
       @behaviour SnapFramework.Scene
       use Scenic.Scene
@@ -25,10 +25,11 @@ defmodule SnapFramework.Scene do
       @name unquote(name)
       @template unquote(template)
       @external_resource @template
-      @state unquote(state)
+      @assigns unquote(assigns)
 
       @using_effects false
       @effects_registry %{}
+      @watch_registry []
 
       @before_compile SnapFramework.Scene
 
@@ -49,7 +50,7 @@ defmodule SnapFramework.Scene do
     end
   end
 
-  defmacro __using__([name: name, template: template, state: state, opts: opts]) do
+  defmacro __using__([name: name, template: template, assigns: assigns, opts: opts]) do
     quote do
       @behaviour SnapFramework.Scene
       use Scenic.Component, unquote(opts)
@@ -64,10 +65,11 @@ defmodule SnapFramework.Scene do
       @name unquote(name)
       @template unquote(template)
       @external_resource @template
-      @state unquote(state)
+      @assigns unquote(assigns)
 
       @using_effects false
       @effects_registry %{}
+      @watch_registry []
 
       def terminate(_, scene), do: {:noreply, scene}
       def process_call(msg, from, scene), do: {:noreply, scene}
@@ -121,7 +123,7 @@ defmodule SnapFramework.Scene do
     end
   end
 
-  defmacro use_effect([state: ks], actions) do
+  defmacro use_effect([assigns: ks], actions) do
     quote location: :keep, bind_quoted: [ks: ks, actions: actions] do
       if not @using_effects do
         @using_effects true
@@ -148,6 +150,12 @@ defmodule SnapFramework.Scene do
     end
   end
 
+  defmacro watch(ks) do
+    quote location: :keep, bind_quoted: [ks: ks] do
+      @watch_registry List.flatten([ks | @watch_registry])
+    end
+  end
+
   defmacro __before_compile__(env) do
     caller = __CALLER__
     template = Module.get_attribute(env.module, :template)
@@ -156,28 +164,26 @@ defmodule SnapFramework.Scene do
       # EEx.function_from_file(:def, :render, @template, [:assigns], engine: SnapFramework.Engine)
 
       def init(scene, _, _) do
+        assigns = Keyword.merge(@assigns, [module: unquote(caller.module)])
         scene =
           scene
-          |> assign(
-            state: @state
-              |> Map.put_new(:module, unquote(caller.module))
-          )
+          |> assign(assigns)
           |> setup
 
-        {:ok, recompile(scene)}
+        {:ok, compile(scene)}
       end
 
       SnapFramework.Macros.effect_handlers()
 
-      def recompile(scene) do
+      def compile(scene) do
         info =
           Keyword.merge(
-            [assigns: [state: scene.assigns.state], engine: SnapFramework.Engine],
+            [assigns: scene.assigns, engine: SnapFramework.Engine],
             [file: unquote(caller.file), line: unquote(caller.line), trim: true]
           )
 
         compiled_list =
-          SnapFramework.Engine.compile_string(unquote(file), [assigns: [state: scene.assigns.state]], info, __ENV__)
+          SnapFramework.Engine.compile_string(unquote(file), [assigns: scene.assigns], info, __ENV__)
 
         graph = build_graph(compiled_list)
 

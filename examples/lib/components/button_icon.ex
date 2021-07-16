@@ -4,7 +4,7 @@ defmodule Examples.Component.ButtonIcon do
   use SnapFramework.Component,
     name: :button_icon,
     template: "lib/components/button_icon.eex",
-    state: %{slot: nil, slot_cmp: nil},
+    assigns: [slot: nil, slot_cmp: nil],
     opts: []
 
   defcomponent :button_icon, :any
