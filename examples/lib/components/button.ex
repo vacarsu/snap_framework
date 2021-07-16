@@ -10,11 +10,9 @@ defmodule Examples.Component.Button do
 
   defcomponent :button, :string
 
-  def setup(state) do
-    Logger.debug(inspect state)
-    state = %{state | icon: state.data, text: state.data}
-    Logger.debug("button setup #{inspect(state)}")
-    state
+  def setup(scene) do
+    Logger.debug(inspect scene)
+    scene |> assign(state: %{scene.assigns.state | icon: scene.assigns.state.data, text: scene.assigns.state.data})
   end
 
   def process_input({:cursor_button, {0, :release, _, _}}, id, scene) do

@@ -38,7 +38,7 @@ defmodule SnapFramework.Scene do
       def process_cast(msg, scene), do: {:noreply, scene}
       def process_input(input, id, scene), do: {:noreply, scene}
       def process_event(event, from_pid, scene), do: {:cont, scene}
-      def setup(state), do: state
+      def setup(scene), do: scene
 
       defoverridable process_call: 3,
                      process_info: 2,
@@ -75,7 +75,7 @@ defmodule SnapFramework.Scene do
       def process_cast(msg, scene), do: {:noreply, scene}
       def process_input(input, id, scene), do: {:noreply, scene}
       def process_event(event, from_pid, scene), do: {:cont, scene}
-      def setup(state), do: state
+      def setup(scene), do: scene
 
       defoverridable process_call: 3,
                      process_info: 2,
@@ -161,8 +161,8 @@ defmodule SnapFramework.Scene do
           |> assign(
             state: @state
               |> Map.put_new(:module, unquote(caller.module))
-              |> setup
           )
+          |> setup
 
         {:ok, recompile(scene)}
       end

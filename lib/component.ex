@@ -82,8 +82,8 @@ defmodule SnapFramework.Component do
             |> Map.put_new(:module, unquote(caller.module))
             |> Map.put_new(:data, data)
             |> Map.put_new(:opts, opts)
-            |> setup()
           )
+          |> setup()
 
         {:ok, recompile(scene)}
       end
