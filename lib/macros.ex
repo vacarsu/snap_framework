@@ -88,11 +88,20 @@ defmodule SnapFramework.Macros do
             # new_scene = scene.assigns.state.module.recompile(new_scene)
             {:cont, event, new_scene, opts}
 
-          response ->
+          {res, new_scene} ->
             diff = diff_state(scene.assigns, new_scene.assigns)
             new_scene = process_effects(new_scene, diff)
             push_graph(new_scene, new_scene.assigns.graph)
             # new_scene = scene.assigns.state.module.recompile(new_scene)
+            {res, new_scene}
+
+          {res, new_scene, opts} ->
+            diff = diff_state(scene.assigns, new_scene.assigns)
+            new_scene = process_effects(new_scene, diff)
+            push_graph(new_scene, new_scene.assigns.graph)
+            # new_scene = scene.assigns.state.module.recompile(new_scene)
+            {res, new_scene, opts}
+          response ->
             response
         end
       end
