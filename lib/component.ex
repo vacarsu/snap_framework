@@ -68,7 +68,17 @@ defmodule SnapFramework.Component do
             {:error, msg} -> raise msg
           end
 
-        Primitive.put(p, {mod, data, id}, options)
+        Primitive.put(p, {__MODULE__, data, id}, options)
+      end
+
+      def unquote(name)(%Primitive{module: mod} = p, data, opts) do
+        data =
+          case mod.validate(data) do
+            {:ok, data} -> data
+            {:error, error} -> raise Exception.message(error)
+          end
+
+        Primitive.put(p, data, opts)
       end
     end
   end
