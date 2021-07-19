@@ -36,12 +36,17 @@ defmodule SnapFramework.Macros do
       end
 
       def handle_cast(msg, scene) do
-        {response_type, new_scene} = scene.assigns.module.process_cast(msg, scene)
-        diff = diff_state(scene.assigns, new_scene.assigns)
-        new_scene = process_effects(new_scene, diff)
-        push_graph(new_scene, new_scene.assigns.graph)
-        # new_scene = scene.assigns.state.module.recompile(new_scene)
-        {response_type, new_scene}
+        case msg do
+          {:_event, _event, _scene} ->
+            msg
+          _ ->
+            {response_type, new_scene} = scene.assigns.module.process_cast(msg, scene)
+            diff = diff_state(scene.assigns, new_scene.assigns)
+            new_scene = process_effects(new_scene, diff)
+            push_graph(new_scene, new_scene.assigns.graph)
+            # new_scene = scene.assigns.state.module.recompile(new_scene)
+            {response_type, new_scene}
+        end
       end
 
       def handle_event(event, from_pid, scene) do
