@@ -61,8 +61,14 @@ defmodule SnapFramework.Component do
         add_to_graph(g, data, options)
       end
 
-      def unquote(name)(%unquote(Primitive){module: SceneRef} = p, data, options) do
-        Primitive.put(p, {__MODULE__, data}, options)
+      def unquote(name)(%Primitive{module: Primitive.Component, data: {mod, _, id}} = p, data, options) do
+        data =
+          case mod.validate(data) do
+            {:ok, data} -> data
+            {:error, msg} -> raise msg
+          end
+
+        Primitive.put(p, {mod, data, id}, options)
       end
     end
   end
