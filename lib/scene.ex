@@ -185,7 +185,7 @@ defmodule SnapFramework.Scene do
         compiled_list =
           SnapFramework.Engine.compile_string(unquote(file), [assigns: scene.assigns], info, __ENV__)
 
-        graph = build_graph(compiled_list)
+        graph = SnapFramework.Engine.Builder.build_graph(compiled_list)
 
         scene
         |> assign(graph: graph)
@@ -224,6 +224,7 @@ defmodule SnapFramework.Scene do
 
                   [type: :primitive, module: module, data: data, opts: opts] ->
                     acc |> module.add_to_graph(data, opts)
+
 
                   _ -> acc
                 end

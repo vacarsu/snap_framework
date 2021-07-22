@@ -57,11 +57,11 @@ defmodule SnapFramework.Component do
 
       def unquote(name)(graph, data, options \\ [])
 
-      def unquote(name)(%unquote(Graph){} = g, data, options) do
+      def unquote(name)(%Graph{} = g, data, options) do
         add_to_graph(g, data, options)
       end
 
-      def unquote(name)(%Primitive{module: Primitive.Component, data: {mod, _, id}} = p, data, options) do
+      def unquote(name)(%Scenic.Primitive{module: Scenic.Primitive.Component, data: {mod, _, id}} = p, data, options) do
         data =
           case mod.validate(data) do
             {:ok, data} -> data
@@ -71,7 +71,7 @@ defmodule SnapFramework.Component do
         Primitive.put(p, {__MODULE__, data, id}, options)
       end
 
-      def unquote(name)(%Primitive{module: mod} = p, data, opts) do
+      def unquote(name)(%Scenic.Primitive{module: mod} = p, data, opts) do
         data =
           case mod.validate(data) do
             {:ok, data} -> data
@@ -123,7 +123,7 @@ defmodule SnapFramework.Component do
             assigns: scene.assigns
           ], info, __ENV__)
 
-        graph = build_graph(compiled_list)
+        graph = SnapFramework.Engine.Builder.build_graph(compiled_list)
 
         scene
         |> assign(graph: graph)

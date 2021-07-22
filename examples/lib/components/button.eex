@@ -2,9 +2,9 @@
 
 <%= primitive Scenic.Primitive.RoundedRectangle, {100, 50, 4}, fill: :blue %>
 
-<%= component Examples.Component.ButtonIcon, "", translate: {10, 20} do
-    primitive Scenic.Primitive.Text, @text, translate: {50, 0}
-    primitive Scenic.Primitive.Text, @icon, translate: {0, 0}
-end %>
+<%= component Examples.Component.ButtonIcon, "", translate: {10, 20} do %>
+    <%= primitive Scenic.Primitive.Text, @text, translate: {50, 0} %>
+    <%= primitive Scenic.Primitive.Text, @icon, translate: {0, 0} %>
+<% end %>
 
 <%= primitive Scenic.Primitive.RoundedRectangle, {100, 50, 4}, id: :btn, fill: :clear, input: true %>

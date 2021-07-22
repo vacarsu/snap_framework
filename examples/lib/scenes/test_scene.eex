@@ -9,9 +9,9 @@
 %>
 
 <%= component Examples.Component.ButtonList, nil, id: :button_list, translate: {20, 200} do %>
-    <%= component Examples.Component.Button, "button 1", translate: {0, 0} %>
-    <%= component Examples.Component.Button, "button 2", translate: {110, 0} %>
-    <%= component Examples.Component.Button, "button 3", translate: {220, 0} %>
+    <%= for {button, i} <- Enum.with_index(@buttons) do %>
+        <%= component Examples.Component.Button, button, translate: {i * 100, 0} %>
+    <% end %>
 <% end %>
 
 <%= component Dropdown, {

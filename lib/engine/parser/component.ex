@@ -44,6 +44,8 @@ defmodule SnapFramework.Parser.Component do
       block
       |> Enum.reduce([], &build_child_list/2)
 
+    Logger.debug("block children #{inspect children, pretty: true}")
+
     quote line: meta[:line] || 0 do
       [
         type: :component,

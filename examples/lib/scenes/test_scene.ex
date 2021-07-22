@@ -24,7 +24,7 @@ defmodule Examples.Scene.TestScene do
       buttons: ["test", "test_1", "test_2"]
     ]
 
-  watch [:dropdown_value]
+  # watch [:dropdown_value]
 
   use_effect [assigns: [text_value: :any]], [
     modify: [
@@ -33,12 +33,13 @@ defmodule Examples.Scene.TestScene do
   ]
 
   use_effect [assigns: [dropdown_value: :primitives]], [
-    add: [{&button/3, :button_text, id: :test_btn, translate: {200, 20}}],
+    modify: [
+      test_btn: {&button/3, :button_text}
+    ],
   ]
 
   use_effect [on_click: [:test_btn]], :noreply, [
     set: [button_text: "button clicked", text_value: "button clicked"],
-    delete: [:test_btn]
   ]
 
   def process_event({:value_changed, :dropdown, value}, _, scene) do
