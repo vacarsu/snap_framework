@@ -117,7 +117,7 @@ defmodule SnapFramework.Component do
               line: unquote(caller.line), trim: true
             ]
           )
-
+        Logger.debug("compile time children #{inspect scene.assigns.children}")
         compiled_list =
           SnapFramework.Engine.compile_string(unquote(file), [
             assigns: scene.assigns

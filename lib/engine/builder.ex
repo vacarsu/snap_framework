@@ -5,7 +5,8 @@ defmodule SnapFramework.Engine.Builder do
         [type: :graph, opts: opts] -> Scenic.Graph.build(opts)
 
         [type: :component, module: module, data: data, opts: opts] ->
-          acc |> module.add_to_graph(data, opts)
+          children = if opts[:do], do: opts[:do], else: nil
+          acc |> module.add_to_graph(data, Keyword.put_new(opts, :children, children))
 
         [type: :component, module: module, data: data, opts: opts, children: children] ->
 
