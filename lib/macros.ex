@@ -164,10 +164,10 @@ defmodule SnapFramework.Macros do
         process_effects(new_scene, diff)
       end
 
-      defp add(scene, {cmp_fun, data, opts}) do
+      defp add(scene, {cmp_fun, {:assigns, assign_key}, opts}) when is_atom(assign_key) do
         graph =
           scene.assigns.graph
-          |> cmp_fun.(data, opts)
+          |> cmp_fun.(scene.assigns[assign_key], opts)
 
         assign(scene, graph: graph)
       end
@@ -181,6 +181,14 @@ defmodule SnapFramework.Macros do
         graph =
           scene.assigns.graph
           |> cmp_fun.(value, opts)
+
+        assign(scene, graph: graph)
+      end
+
+      defp add(scene, {cmp_fun, data, opts}) do
+        graph =
+          scene.assigns.graph
+          |> cmp_fun.(data, opts)
 
         assign(scene, graph: graph)
       end
