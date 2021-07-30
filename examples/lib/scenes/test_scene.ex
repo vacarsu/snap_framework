@@ -28,13 +28,13 @@ defmodule Examples.Scene.TestScene do
 
   use_effect [assigns: [text_value: :any]], [
     modify: [
-      dropdown_value_text: {&text/3, {:assigns, [:text_value]}}
+      dropdown_value_text: {&text/3, {:assigns, :text_value}}
     ]
   ]
 
   use_effect [assigns: [dropdown_value: :primitives]], [
     modify: [
-      test_btn: {&button/3, :button_text}
+      test_btn: {&button/3, {:assigns, :button_text}}
     ],
   ]
 
