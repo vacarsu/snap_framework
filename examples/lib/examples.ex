@@ -8,7 +8,6 @@ defmodule Examples do
     RingLogger.attach()
     # load the viewport configuration from config
     main_viewport_config = Application.get_env(:examples, :viewport)
-    Logger.debug(inspect(main_viewport_config))
     # start the application with the viewport
     children = [
       {Scenic, [main_viewport_config]}

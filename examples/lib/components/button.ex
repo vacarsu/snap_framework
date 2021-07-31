@@ -11,12 +11,10 @@ defmodule Examples.Component.Button do
   defcomponent :button, :string
 
   def setup(scene) do
-    Logger.debug(inspect scene)
     assign(scene, icon: scene.assigns.data, text: scene.assigns.data)
   end
 
   def process_input({:cursor_button, {0, :release, _, _}}, id, scene) do
-    Logger.debug(inspect scene.assigns.opts[:id])
     send_parent_event(scene, {:click, scene.assigns.opts[:id]})
     {:noreply, scene}
   end

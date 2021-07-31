@@ -18,7 +18,6 @@ defmodule SnapFramework.Engine do
   def compile_string(string, assigns, info, env) do
     quoted = EEx.compile_string(string, info)
     {result, _binding} = Code.eval_quoted(quoted, assigns, env)
-    Logger.debug(inspect List.last(result), pretty: true)
     result
   end
 

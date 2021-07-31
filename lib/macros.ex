@@ -157,7 +157,6 @@ defmodule SnapFramework.Macros do
       end
 
       defp set(scene, {key, value}) do
-        Logger.debug("running set effect")
         assigns = Keyword.put([], key, value)
         new_scene = assign(scene, assigns)
         diff = diff_state(scene.assigns, new_scene.assigns)
