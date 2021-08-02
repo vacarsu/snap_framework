@@ -217,7 +217,7 @@ defmodule SnapFramework.Macros do
         assign(scene, graph: graph)
       end
 
-      defp modify(scene, {cmp_id, {cmp_fun, opts}}) when is_list(opts) do
+      defp modify(scene, {cmp_id, {cmp_fun, opts}}) do
         graph =
         scene.assigns.graph
         |> Graph.modify(cmp_id, fn g -> Primitive.merge_opts(g, opts) end)
@@ -225,13 +225,13 @@ defmodule SnapFramework.Macros do
         assign(scene, graph: graph)
       end
 
-      defp modify(scene, {cmp_id, {cmp_fun, value}}) do
-        graph =
-        scene.assigns.graph
-        |> Graph.modify(cmp_id, fn g -> cmp_fun.(g, value, []) end)
+      # defp modify(scene, {cmp_id, {cmp_fun, value}}) do
+      #   graph =
+      #   scene.assigns.graph
+      #   |> Graph.modify(cmp_id, fn g -> cmp_fun.(g, value, []) end)
 
-        assign(scene, graph: graph)
-      end
+      #   assign(scene, graph: graph)
+      # end
 
       defp modify(scene, {cmp_id, {cmp_fun, {:assigns, assign_key}, opts}})
       when is_atom(assign_key) and is_list(opts)
