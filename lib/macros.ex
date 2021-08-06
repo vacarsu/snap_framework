@@ -127,7 +127,6 @@ defmodule SnapFramework.Macros do
         Enum.reduce(added, scene, fn {key, value}, acc ->
           if Enum.member?(@watch_registry, key) do
             scene = compile(scene)
-            push_graph(scene, scene.assigns.graph)
           else
             acc |> change(key, value)
           end
