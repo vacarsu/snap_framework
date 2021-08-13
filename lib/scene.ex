@@ -140,7 +140,6 @@ defmodule SnapFramework.Scene do
       end
 
       def process_put(data, _, scene) do
-        Logger.debug("got put")
         {:reply, :ok, assign(scene, data: data)}
       end
     end

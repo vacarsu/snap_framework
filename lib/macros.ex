@@ -37,7 +37,6 @@ defmodule SnapFramework.Macros do
 
       def handle_update(msg, opts, scene) do
         {response_type, new_scene} = scene.assigns.module.process_update(msg, opts, scene)
-        Logger.debug("process_update triggered")
         diff = diff_state(scene.assigns, new_scene.assigns)
         new_scene = process_effects(new_scene, diff)
         push_graph(new_scene, new_scene.assigns.graph)
@@ -130,12 +129,10 @@ defmodule SnapFramework.Macros do
       end
 
       defp process_effects(scene, %{changed: :equal}) do
-        Logger.debug("no change in state")
         scene
       end
 
       defp process_effects(scene, %{changed: :map_change, added: added}) do
-        Logger.debug("change in state")
         Enum.reduce(added, scene, fn {key, value}, acc ->
           if Enum.member?(@watch_registry, key) do
             scene = compile(scene)
@@ -206,7 +203,6 @@ defmodule SnapFramework.Macros do
       defp modify(scene, {cmp_id, {cmp_fun, {:assigns, assign_key}}})
       when is_atom(assign_key)
       do
-        Logger.debug("triggering modify")
         graph =
           scene.assigns.graph
           |> Graph.modify(cmp_id, fn g -> cmp_fun.(g, scene.assigns[assign_key], []) end)
