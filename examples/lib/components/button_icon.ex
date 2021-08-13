@@ -1,5 +1,5 @@
 defmodule Examples.Component.ButtonIcon do
-  import Scenic.Primitives
+  import Scenic.Primitives, only: [text: 3]
 
   use SnapFramework.Component,
     name: :button_icon,
@@ -8,4 +8,11 @@ defmodule Examples.Component.ButtonIcon do
     opts: []
 
   defcomponent :button_icon, :any
+
+  use_effect [assigns: [data: :any]], [
+    modify: [
+      icon: {&text/3, {:assigns, :data}},
+      text: {&text/3, {:assigns, :data}}
+    ]
+  ]
 end

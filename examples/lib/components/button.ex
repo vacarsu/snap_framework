@@ -1,5 +1,5 @@
 defmodule Examples.Component.Button do
-  import Scenic.Primitives, only: [rounded_rectangle: 3]
+  import Scenic.Primitives, only: [text: 3, rounded_rectangle: 3]
   import Examples.Component.ButtonIcon, only: [button_icon: 3]
 
   use SnapFramework.Component,
@@ -9,6 +9,14 @@ defmodule Examples.Component.Button do
     opts: []
 
   defcomponent :button, :string
+
+  # watch [:data, :opts]
+
+  use_effect [assigns: [data: :any]], [
+    modify: [
+      button_icon: {&button_icon/3, {:assigns, :data}}
+    ]
+  ]
 
   def setup(scene) do
     assign(scene, icon: scene.assigns.data, text: scene.assigns.data)

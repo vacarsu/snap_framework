@@ -7,6 +7,7 @@ defmodule SnapFramework.Scene do
   @callback process_info(msg :: any, scene :: map) :: {term :: atom, scene :: map}
   @callback process_cast(msg :: any, scene :: map) :: {term :: atom, scene:: map}
   @callback process_input(input :: any, id :: atom, scene :: map) :: {term :: atom, scene :: map}
+  @callback process_update(data :: any, opts :: List.t, scene :: map) :: {term :: atom, scene :: map}
   @callback process_event(event :: any, from_pid :: any, scene :: map) :: {term :: atom, scene :: map}
   @callback setup(state :: map()) :: map()
 
@@ -38,13 +39,17 @@ defmodule SnapFramework.Scene do
       def process_info(msg, scene), do: {:noreply, scene}
       def process_cast(msg, scene), do: {:noreply, scene}
       def process_input(input, id, scene), do: {:noreply, scene}
-      def process_event(event, from_pid, scene), do: {:cont, scene}
+      def process_update(data, opts, scene) do
+        {:noreply, assign(scene, data: data, opts: Keyword.merge(scene.assigns.opts, opts))}
+      end
+      def process_event(event, from_pid, scene), do: {:cont, event, scene}
       def setup(scene), do: scene
 
       defoverridable process_call: 3,
                      process_info: 2,
                      process_cast: 2,
                      process_input: 3,
+                     process_update: 3,
                      process_event: 3,
                      setup: 1
     end
@@ -76,13 +81,17 @@ defmodule SnapFramework.Scene do
       def process_info(msg, scene), do: {:noreply, scene}
       def process_cast(msg, scene), do: {:noreply, scene}
       def process_input(input, id, scene), do: {:noreply, scene}
-      def process_event(event, from_pid, scene), do: {:cont, scene}
+      def process_update(data, opts, scene) do
+        {:noreply, assign(scene, data: data, opts: Keyword.merge(scene.assigns.opts, opts))}
+      end
+      def process_event(event, from_pid, scene), do: {:cont, event, scene}
       def setup(scene), do: scene
 
       defoverridable process_call: 3,
                      process_info: 2,
                      process_cast: 2,
                      process_input: 3,
+                     process_update: 3,
                      process_event: 3,
                      setup: 1
     end
@@ -123,6 +132,20 @@ defmodule SnapFramework.Scene do
     end
   end
 
+  defmacro use_effect(:on_put) do
+    quote do
+      if not @using_effects do
+        @using_effects true
+        SnapFramework.Macros.scene_handlers()
+      end
+
+      def process_put(data, _, scene) do
+        Logger.debug("got put")
+        {:reply, :ok, assign(scene, data: data)}
+      end
+    end
+  end
+
   defmacro use_effect([assigns: ks], actions) do
     quote location: :keep, bind_quoted: [ks: ks, actions: actions] do
       if not @using_effects do
@@ -152,6 +175,11 @@ defmodule SnapFramework.Scene do
 
   defmacro watch(ks) do
     quote location: :keep, bind_quoted: [ks: ks] do
+      if not @using_effects do
+        @using_effects true
+        SnapFramework.Macros.scene_handlers()
+      end
+
       @watch_registry List.flatten([ks | @watch_registry])
     end
   end
