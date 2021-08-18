@@ -1,6 +1,7 @@
 defmodule SnapFramework.Component do
   alias Scenic.Graph
   alias Scenic.Primitive
+  require SnapFramework.Macros
   require Logger
 
   defmacro __using__([name: name, template: template, assigns: assigns, opts: opts]) do
@@ -23,8 +24,6 @@ defmodule SnapFramework.Component do
       @preload unquote(opts[:preload]) || true
 
       @before_compile SnapFramework.Component
-
-      SnapFramework.Macros.input_handler()
     end
   end
 
@@ -129,6 +128,7 @@ defmodule SnapFramework.Component do
         |> push_graph(graph)
       end
 
+      # SnapFramework.Macros.effect_handlers()
       SnapFramework.Macros.effect_handlers()
     end
   end

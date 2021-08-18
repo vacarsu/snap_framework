@@ -29,23 +29,29 @@ defmodule Examples.Scene.TestScene do
   use_effect [assigns: [text_value: :any, button_text: :any]], [
     modify: [
       test_btn: {&button/3, {:assigns, :button_text}},
-      # dropdown_value_text: {&text/3, {:assigns, :text_value}}
+      dropdown_value_text: {&text/3, {:assigns, :text_value}}
     ]
   ]
 
-  # use_effect [assigns: [dropdown_value: :primitives]], [
-  #   modify: [
-  #     test_btn: {&button/3, {:assigns, :button_text}}
-  #   ],
-  # ]
+  use_effect [assigns: [dropdown_value: :primitives]], [
+    modify: [
+      test_btn: {&button/3, {:assigns, :button_text}}
+    ],
+  ]
 
   use_effect [on_click: [:test_btn]], :noreply, [
     set: [button_text: "button clicked", text_value: "button clicked"],
   ]
 
   def process_event({:value_changed, :dropdown, value}, _, scene) do
+    Logger.debug("changed")
     # {:ok, [btn_pid]} = child(scene, :test_btn)
     # Scenic.Component.put(btn_pid, "selected value #{value}")
     {:noreply, assign(scene, dropdown_value: value, button_text: "hi", text_value: "selected value #{value}")}
+  end
+
+  def process_event(_, _, scene) do
+    Logger.debug("working")
+    {:noreply, scene}
   end
 end

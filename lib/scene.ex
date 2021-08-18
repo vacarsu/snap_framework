@@ -1,15 +1,32 @@
 defmodule SnapFramework.Scene do
+  alias Scenic.Scene
   require Logger
 
   @optional_callbacks setup: 1
 
-  @callback process_call(msg :: map, from :: GenServer.from, scene :: map) :: {term :: atom, scene :: map}
-  @callback process_info(msg :: any, scene :: map) :: {term :: atom, scene :: map}
-  @callback process_cast(msg :: any, scene :: map) :: {term :: atom, scene:: map}
-  @callback process_input(input :: any, id :: atom, scene :: map) :: {term :: atom, scene :: map}
-  @callback process_update(data :: any, opts :: List.t, scene :: map) :: {term :: atom, scene :: map}
-  @callback process_event(event :: any, from_pid :: any, scene :: map) :: {term :: atom, scene :: map}
-  @callback setup(state :: map()) :: map()
+  @callback process_call(msg :: any, from :: GenServer.from, scene :: Scene.t()) ::
+    {term :: atom, scene :: Scene.t()}
+
+  @callback process_info(msg :: any, scene :: Scene.t()) ::
+    {term :: atom, scene :: Scene.t()}
+
+  @callback process_cast(msg :: any, scene :: Scene.t()) ::
+    {term :: atom, scene:: Scene.t()}
+
+  @callback process_input(input :: any, id :: any, scene :: Scene.t()) ::
+    {term :: atom, scene :: Scene.t()}
+
+  @callback process_update(data :: any, opts :: List.t, scene :: Scene.t()) ::
+    {term :: atom, scene :: Scene.t()}
+
+  @callback process_event(event :: any, from_pid :: any, scene :: Scene.t()) ::
+    {atom, Scene.t()}
+    | {atom, Scene.t(), list}
+    | {atom, any, Scene.t()}
+    | {atom, any, Scene.t(), list}
+
+    @callback setup(scene :: Scene.t()) ::
+    Scene.t()
 
   defmacro __using__(name: name, template: template, assigns: assigns) do
     quote do
@@ -45,6 +62,9 @@ defmodule SnapFramework.Scene do
       def process_event(event, from_pid, scene), do: {:cont, event, scene}
       def setup(scene), do: scene
 
+      SnapFramework.Macros.input_handler()
+      SnapFramework.Macros.scene_handlers()
+
       defoverridable process_call: 3,
                      process_info: 2,
                      process_cast: 2,
@@ -72,7 +92,7 @@ defmodule SnapFramework.Scene do
       @external_resource @template
       @assigns unquote(assigns)
 
-      @using_effects false
+      # @using_effects false
       @effects_registry %{}
       @watch_registry []
 
@@ -87,6 +107,10 @@ defmodule SnapFramework.Scene do
       def process_event(event, from_pid, scene), do: {:cont, event, scene}
       def setup(scene), do: scene
 
+
+      SnapFramework.Macros.input_handler()
+      SnapFramework.Macros.scene_handlers()
+
       defoverridable process_call: 3,
                      process_info: 2,
                      process_cast: 2,
@@ -99,10 +123,10 @@ defmodule SnapFramework.Scene do
 
   defmacro use_effect([on_click: ids], term, effects) when is_list(ids) do
     quote location: :keep, bind_quoted: [ids: ids, term: term, effects: effects] do
-      if not @using_effects do
-        @using_effects true
-        SnapFramework.Macros.scene_handlers()
-      end
+      # if not @using_effects do
+      #   @using_effects true
+      #   SnapFramework.Macros.scene_handlers()
+      # end
 
       for cmp_id <- ids do
         def process_event({:click, unquote(cmp_id)} = event, _from_pid, scene) do
@@ -134,10 +158,10 @@ defmodule SnapFramework.Scene do
 
   defmacro use_effect(:on_put) do
     quote do
-      if not @using_effects do
-        @using_effects true
-        SnapFramework.Macros.scene_handlers()
-      end
+      # if not @using_effects do
+      #   @using_effects true
+      #   SnapFramework.Macros.scene_handlers()
+      # end
 
       def process_put(data, _, scene) do
         {:reply, :ok, assign(scene, data: data)}
@@ -147,10 +171,10 @@ defmodule SnapFramework.Scene do
 
   defmacro use_effect([assigns: ks], actions) do
     quote location: :keep, bind_quoted: [ks: ks, actions: actions] do
-      if not @using_effects do
-        @using_effects true
-        SnapFramework.Macros.scene_handlers()
-      end
+      # if not @using_effects do
+      #   @using_effects true
+      #   SnapFramework.Macros.scene_handlers()
+      # end
 
       @effects_registry Enum.reduce(ks, @effects_registry, fn
       kv, acc ->
@@ -174,10 +198,10 @@ defmodule SnapFramework.Scene do
 
   defmacro watch(ks) do
     quote location: :keep, bind_quoted: [ks: ks] do
-      if not @using_effects do
-        @using_effects true
-        SnapFramework.Macros.scene_handlers()
-      end
+      # if not @using_effects do
+      #   @using_effects true
+      #   SnapFramework.Macros.scene_handlers()
+      # end
 
       @watch_registry List.flatten([ks | @watch_registry])
     end
@@ -200,8 +224,6 @@ defmodule SnapFramework.Scene do
         {:ok, compile(scene)}
       end
 
-      SnapFramework.Macros.effect_handlers()
-
       def compile(scene) do
         info =
           Keyword.merge(
@@ -218,6 +240,8 @@ defmodule SnapFramework.Scene do
         |> assign(graph: graph)
         |> push_graph(graph)
       end
+
+      SnapFramework.Macros.effect_handlers()
     end
   end
 end
