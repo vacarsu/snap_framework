@@ -159,9 +159,14 @@ defmodule SnapFramework.Macros do
             :add -> Enum.reduce(list, acc, fn item, s_acc -> add(s_acc, item) end)
             :modify -> Enum.reduce(list, acc, fn item, s_acc -> modify(s_acc, item) end)
             :delete -> Enum.reduce(list, acc, fn item, s_acc -> delete(s_acc, item) end)
+            :run -> Enum.reduce(list, acc, fn item, s_acc -> run(s_acc, item) end)
             _ -> acc
           end
         end)
+      end
+
+      defp run(scene, func) do
+        apply(@controller, func, [scene])
       end
 
       defp set(scene, {key, value}) do

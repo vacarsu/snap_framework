@@ -4,11 +4,12 @@ defmodule SnapFramework.Component do
   require SnapFramework.Macros
   require Logger
 
-  defmacro __using__([name: name, template: template, assigns: assigns, opts: opts]) do
+  defmacro __using__([name: name, template: template, controller: controller, assigns: assigns, opts: opts]) do
     quote do
       use SnapFramework.Scene,
         name: unquote(name),
         template: unquote(template),
+        controller: unquote(controller),
         assigns: unquote(assigns),
         opts: unquote(opts)
 
