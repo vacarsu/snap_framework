@@ -28,15 +28,6 @@ defmodule SnapFramework.Macros do
         {response_type, do_process(scene, new_scene)}
       end
 
-      def handle_cast(msg, scene) do
-        case msg do
-          {:_event, _event, _scene} ->
-            msg
-          _ ->
-            {response_type, do_process(scene, new_scene)}
-        end
-      end
-
       def handle_event(event, from_pid, scene) do
         case scene.assigns.module.process_event(event, from_pid, scene) do
           {:noreply, new_scene} ->
@@ -72,7 +63,7 @@ defmodule SnapFramework.Macros do
   defmacro effect_handlers() do
     quote do
       defp do_process(old_scene, new_scene) do
-        diff = diff_state(scene.assigns, new_scene.assigns)
+        diff = diff_state(old_scene.assigns, new_scene.assigns)
         new_scene = process_effects(new_scene, diff)
         push_graph(new_scene, new_scene.assigns.graph)
       end
