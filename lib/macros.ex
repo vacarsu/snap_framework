@@ -6,11 +6,7 @@ defmodule SnapFramework.Macros do
     quote do
       def handle_input(input, id, scene) do
         {response_type, new_scene} = scene.assigns.module.process_input(input, id, scene)
-        diff = diff_state(scene.assigns, new_scene.assigns)
-        new_scene = process_effects(new_scene, diff)
-        push_graph(new_scene, new_scene.assigns.graph)
-        # new_scene = scene.assigns.state.module.recompile(new_scene)
-        {response_type, new_scene}
+        {response_type, do_process(scene, new_scene)}
       end
     end
   end
@@ -19,29 +15,17 @@ defmodule SnapFramework.Macros do
     quote do
       def handle_info(msg, scene) do
         {response_type, new_scene} = scene.assigns.module.process_info(msg, scene)
-        diff = diff_state(scene.assigns, new_scene.assigns)
-        new_scene = process_effects(new_scene, diff)
-        push_graph(new_scene, new_scene.assigns.graph)
-        # new_scene = scene.assigns.state.module.recompile(new_scene)
-        {response_type, new_scene}
+        {response_type, do_process(scene, new_scene)}
       end
 
       def handle_call(msg, from, scene) do
         {response_type, res, new_scene} = scene.assigns.module.process_call(msg, from, scene)
-        diff = diff_state(scene.assigns, new_scene.assigns)
-        new_scene = process_effects(new_scene, diff)
-        push_graph(new_scene, new_scene.assigns.graph)
-        # new_scene = scene.assigns.state.module.recompile(new_scene)
-        {response_type, res, new_scene}
+        {response_type, res, do_process(scene, new_scene)}
       end
 
       def handle_update(msg, opts, scene) do
         {response_type, new_scene} = scene.assigns.module.process_update(msg, opts, scene)
-        diff = diff_state(scene.assigns, new_scene.assigns)
-        new_scene = process_effects(new_scene, diff)
-        push_graph(new_scene, new_scene.assigns.graph)
-        # new_scene = scene.assigns.state.module.recompile(new_scene)
-        {response_type, new_scene}
+        {response_type, do_process(scene, new_scene)}
       end
 
       def handle_cast(msg, scene) do
@@ -49,72 +33,35 @@ defmodule SnapFramework.Macros do
           {:_event, _event, _scene} ->
             msg
           _ ->
-            {response_type, new_scene} = scene.assigns.module.process_cast(msg, scene)
-            diff = diff_state(scene.assigns, new_scene.assigns)
-            new_scene = process_effects(new_scene, diff)
-            push_graph(new_scene, new_scene.assigns.graph)
-            # new_scene = scene.assigns.state.module.recompile(new_scene)
-            {response_type, new_scene}
+            {response_type, do_process(scene, new_scene)}
         end
       end
 
       def handle_event(event, from_pid, scene) do
         case scene.assigns.module.process_event(event, from_pid, scene) do
           {:noreply, new_scene} ->
-            diff = diff_state(scene.assigns, new_scene.assigns)
-            new_scene = process_effects(new_scene, diff)
-            push_graph(new_scene, new_scene.assigns.graph)
-            # new_scene = scene.assigns.state.module.recompile(new_scene)
-            {:noreply, new_scene}
+            {:noreply, do_process(scene, new_scene)}
 
           {:noreply, new_scene, opts} ->
-            diff = diff_state(scene.assigns, new_scene.assigns)
-            new_scene = process_effects(new_scene, diff)
-            push_graph(new_scene, new_scene.assigns.graph)
-            # new_scene = scene.assigns.state.module.recompile(new_scene)
-            {:noreply, new_scene, opts}
+            {:noreply, do_process(scene, new_scene), opts}
 
           {:halt, new_scene} ->
-            diff = diff_state(scene.assigns, new_scene.assigns)
-            new_scene = process_effects(new_scene, diff)
-            push_graph(new_scene, new_scene.assigns.graph)
-            # new_scene = scene.assigns.state.module.recompile(new_scene)
-            {:halt, new_scene}
+            {:halt, do_process(scene, new_scene)}
 
           {:halt, new_scene, opts} ->
-            diff = diff_state(scene.assigns, new_scene.assigns)
-            new_scene = process_effects(new_scene, diff)
-            push_graph(new_scene, new_scene.assigns.graph)
-            # new_scene = scene.assigns.state.module.recompile(new_scene)
-            {:halt, new_scene, opts}
+            {:halt, do_process(scene, new_scene), opts}
 
           {:cont, event, new_scene} ->
-            diff = diff_state(scene.assigns, new_scene.assigns)
-            new_scene = process_effects(new_scene, diff)
-            push_graph(new_scene, new_scene.assigns.graph)
-            # new_scene = scene.assigns.state.module.recompile(new_scene)
-            {:cont, event, new_scene}
+            {:cont, event, do_process(scene, new_scene)}
 
           {:cont, event, new_scene, opts} ->
-            diff = diff_state(scene.assigns, new_scene.assigns)
-            new_scene = process_effects(new_scene, diff)
-            push_graph(new_scene, new_scene.assigns.graph)
-            # new_scene = scene.assigns.state.module.recompile(new_scene)
-            {:cont, event, new_scene, opts}
+            {:cont, event, do_process(scene, new_scene), opts}
 
           {res, new_scene} ->
-            diff = diff_state(scene.assigns, new_scene.assigns)
-            new_scene = process_effects(new_scene, diff)
-            push_graph(new_scene, new_scene.assigns.graph)
-            # new_scene = scene.assigns.state.module.recompile(new_scene)
-            {res, new_scene}
+            {res, do_process(scene, new_scene)}
 
           {res, new_scene, opts} ->
-            diff = diff_state(scene.assigns, new_scene.assigns)
-            new_scene = process_effects(new_scene, diff)
-            push_graph(new_scene, new_scene.assigns.graph)
-            # new_scene = scene.assigns.state.module.recompile(new_scene)
-            {res, new_scene, opts}
+            {res, do_process(scene, new_scene), opts}
           response ->
             response
         end
@@ -124,6 +71,12 @@ defmodule SnapFramework.Macros do
 
   defmacro effect_handlers() do
     quote do
+      defp do_process(old_scene, new_scene) do
+        diff = diff_state(scene.assigns, new_scene.assigns)
+        new_scene = process_effects(new_scene, diff)
+        push_graph(new_scene, new_scene.assigns.graph)
+      end
+
       defp diff_state(old_state, new_state) do
         MapDiff.diff(old_state, new_state)
       end
