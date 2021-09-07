@@ -39,6 +39,12 @@ defmodule Examples.Scene.TestScene do
     set: [button_text: "button clicked", text_value: "button clicked"],
   ]
 
+  def mounted(scene) do
+    Logger.debug("callback mounted called")
+    Logger.debug(inspect scene.assigns.graph)
+    scene
+  end
+
   def process_event({:value_changed, :dropdown, value}, _, scene) do
     Logger.debug("changed")
     # {:ok, [btn_pid]} = child(scene, :test_btn)

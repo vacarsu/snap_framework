@@ -2,7 +2,7 @@ defmodule SnapFramework.Scene do
   alias Scenic.Scene
   require Logger
 
-  @optional_callbacks setup: 1
+  @optional_callbacks setup: 1, mounted: 1
 
   @callback process_call(msg :: any, from :: GenServer.from, scene :: Scene.t()) ::
     {term :: atom, scene :: Scene.t()}
@@ -26,6 +26,7 @@ defmodule SnapFramework.Scene do
     | {term :: atom, event :: any, scene :: Scene.t(), opts :: list}
 
   @callback setup(scene :: Scene.t()) :: Scene.t()
+  @callback mounted(scene :: Scene.t()) :: Scene.t()
 
   defmacro __using__(name: name, template: template, controller: controller, assigns: assigns) do
     quote do
@@ -61,6 +62,7 @@ defmodule SnapFramework.Scene do
       end
       def process_event(event, from_pid, scene), do: {:cont, event, scene}
       def setup(scene), do: scene
+      def mounted(scene), do: scene
 
       SnapFramework.Macros.input_handler()
       SnapFramework.Macros.scene_handlers()
@@ -71,7 +73,8 @@ defmodule SnapFramework.Scene do
                      process_input: 3,
                      process_update: 3,
                      process_event: 3,
-                     setup: 1
+                     setup: 1,
+                     mounted: 1
     end
   end
 
@@ -107,6 +110,7 @@ defmodule SnapFramework.Scene do
       end
       def process_event(event, from_pid, scene), do: {:cont, event, scene}
       def setup(scene), do: scene
+      def mounted(scene), do: scene
 
 
       SnapFramework.Macros.input_handler()
@@ -118,7 +122,8 @@ defmodule SnapFramework.Scene do
                      process_input: 3,
                      process_update: 3,
                      process_event: 3,
-                     setup: 1
+                     setup: 1,
+                     mounted: 1
     end
   end
 
@@ -220,9 +225,11 @@ defmodule SnapFramework.Scene do
         scene =
           scene
           |> assign(assigns)
-          |> setup
+          |> setup()
+          |> compile()
+          |> mounted()
 
-        {:ok, compile(scene)}
+        {:ok, scene}
       end
 
       def compile(scene) do

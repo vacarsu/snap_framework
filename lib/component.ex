@@ -101,8 +101,10 @@ defmodule SnapFramework.Component do
           scene
           |> assign(assigns)
           |> setup()
+          |> compile()
+          |> mounted()
 
-        {:ok, compile(scene)}
+        {:ok, scene}
       end
 
       def compile(scene) do
