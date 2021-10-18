@@ -65,7 +65,14 @@ defmodule SnapFramework.Macros do
       defp do_process(old_scene, new_scene) do
         diff = diff_state(old_scene.assigns, new_scene.assigns)
         new_scene = process_effects(new_scene, diff)
-        push_graph(new_scene, new_scene.assigns.graph)
+        # IO.puts("before push_graph")
+        # push_graph(new_scene, new_scene.assigns.graph)
+        # IO.puts("after push_graph")
+        if old_scene.assigns.graph != new_scene.assigns.graph do
+          push_graph(new_scene, new_scene.assigns.graph)
+        else
+          new_scene
+        end
       end
 
       defp diff_state(old_state, new_state) do
