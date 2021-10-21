@@ -1,10 +1,10 @@
 defmodule Examples.Component.Button do
   import Scenic.Primitives, only: [text: 3, rounded_rectangle: 3]
-  import Examples.Component.ButtonIcon, only: [button_icon: 3]
 
   use SnapFramework.Component,
     name: :button,
     template: "lib/components/button.eex",
+    controller: Examples.Component.ButtonController,
     assigns: [icon: "test", text: "test"],
     opts: []
 
@@ -13,9 +13,7 @@ defmodule Examples.Component.Button do
   # watch [:data, :opts]
 
   use_effect [assigns: [data: :any]], [
-    modify: [
-      button_icon: {&button_icon/3, {:assigns, :data}}
-    ]
+    run: [:on_data_change]
   ]
 
   def setup(scene) do
@@ -28,6 +26,11 @@ defmodule Examples.Component.Button do
   end
 
   def process_input(_, _, scene) do
+    {:noreply, scene}
+  end
+
+  def process_info(:test, scene) do
+    Logger.debug("working")
     {:noreply, scene}
   end
 end

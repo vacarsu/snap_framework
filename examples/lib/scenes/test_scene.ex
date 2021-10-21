@@ -10,6 +10,7 @@ defmodule Examples.Scene.TestScene do
   use SnapFramework.Scene,
     name: "test_scene",
     template: "lib/scenes/test_scene.eex",
+    controller: Examples.Scene.TestSceneController,
     assigns: [
       dropdown_opts: [
         {"Dashboard", :dashboard},
@@ -27,21 +28,22 @@ defmodule Examples.Scene.TestScene do
   # watch [:dropdown_value]
 
   use_effect [assigns: [text_value: :any, button_text: :any]], [
-    modify: [
-      test_btn: {&button/3, {:assigns, :button_text}},
-      dropdown_value_text: {&text/3, {:assigns, :text_value}}
-    ]
+    run: [:on_text_change]
   ]
 
   use_effect [assigns: [dropdown_value: :primitives]], [
-    modify: [
-      test_btn: {&button/3, {:assigns, :button_text}}
-    ],
+    run: [:on_dropdown_value_change],
   ]
 
   use_effect [on_click: [:test_btn]], :noreply, [
     set: [button_text: "button clicked", text_value: "button clicked"],
   ]
+
+  def mounted(scene) do
+    Logger.debug("callback mounted called")
+    Logger.debug(inspect scene.assigns.graph)
+    scene
+  end
 
   def process_event({:value_changed, :dropdown, value}, _, scene) do
     Logger.debug("changed")

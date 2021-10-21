@@ -2,7 +2,7 @@ defmodule SnapFramework.Scene do
   alias Scenic.Scene
   require Logger
 
-  @optional_callbacks setup: 1
+  @optional_callbacks setup: 1, mounted: 1
 
   @callback process_call(msg :: any, from :: GenServer.from, scene :: Scene.t()) ::
     {term :: atom, scene :: Scene.t()}
@@ -20,15 +20,15 @@ defmodule SnapFramework.Scene do
     {term :: atom, scene :: Scene.t()}
 
   @callback process_event(event :: any, from_pid :: any, scene :: Scene.t()) ::
-    {atom, Scene.t()}
-    | {atom, Scene.t(), list}
-    | {atom, any, Scene.t()}
-    | {atom, any, Scene.t(), list}
+    {term :: atom, scene :: Scene.t()}
+    | {term :: atom, scene :: Scene.t(), opts :: list}
+    | {term :: atom, event :: any, scene :: Scene.t()}
+    | {term :: atom, event :: any, scene :: Scene.t(), opts :: list}
 
-    @callback setup(scene :: Scene.t()) ::
-    Scene.t()
+  @callback setup(scene :: Scene.t()) :: Scene.t()
+  @callback mounted(scene :: Scene.t()) :: Scene.t()
 
-  defmacro __using__(name: name, template: template, assigns: assigns) do
+  defmacro __using__(name: name, template: template, controller: controller, assigns: assigns) do
     quote do
       @behaviour SnapFramework.Scene
       use Scenic.Scene
@@ -42,6 +42,7 @@ defmodule SnapFramework.Scene do
 
       @name unquote(name)
       @template unquote(template)
+      @controller unquote(controller)
       @external_resource @template
       @assigns unquote(assigns)
 
@@ -61,6 +62,7 @@ defmodule SnapFramework.Scene do
       end
       def process_event(event, from_pid, scene), do: {:cont, event, scene}
       def setup(scene), do: scene
+      def mounted(scene), do: scene
 
       SnapFramework.Macros.input_handler()
       SnapFramework.Macros.scene_handlers()
@@ -71,11 +73,12 @@ defmodule SnapFramework.Scene do
                      process_input: 3,
                      process_update: 3,
                      process_event: 3,
-                     setup: 1
+                     setup: 1,
+                     mounted: 1
     end
   end
 
-  defmacro __using__([name: name, template: template, assigns: assigns, opts: opts]) do
+  defmacro __using__([name: name, template: template, controller: controller, assigns: assigns, opts: opts]) do
     quote do
       @behaviour SnapFramework.Scene
       use Scenic.Component, unquote(opts)
@@ -89,6 +92,7 @@ defmodule SnapFramework.Scene do
 
       @name unquote(name)
       @template unquote(template)
+      @controller unquote(controller)
       @external_resource @template
       @assigns unquote(assigns)
 
@@ -106,6 +110,7 @@ defmodule SnapFramework.Scene do
       end
       def process_event(event, from_pid, scene), do: {:cont, event, scene}
       def setup(scene), do: scene
+      def mounted(scene), do: scene
 
 
       SnapFramework.Macros.input_handler()
@@ -117,7 +122,8 @@ defmodule SnapFramework.Scene do
                      process_input: 3,
                      process_update: 3,
                      process_event: 3,
-                     setup: 1
+                     setup: 1,
+                     mounted: 1
     end
   end
 
@@ -219,9 +225,11 @@ defmodule SnapFramework.Scene do
         scene =
           scene
           |> assign(assigns)
-          |> setup
+          |> setup()
+          |> compile()
+          |> mounted()
 
-        {:ok, compile(scene)}
+        {:ok, scene}
       end
 
       def compile(scene) do
