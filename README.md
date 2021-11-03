@@ -56,7 +56,7 @@ To initialize your first scene -
   Having just the above should be enough to get the scene rendering.
   But as you can see selecting a new dropdown doesn't update the text component text like the template implies that it should.
 
-  To update graphs SnapFrame has the ```use_effect``` macro. This macro comes with a Scene or Component.
+  To update a graph SnapFrame has the ```use_effect``` macro. This macro comes with a Scene or Component.
   Let's update the above code to catch the event from the dropdown and update the text.
 
   ``` elixir
@@ -101,9 +101,9 @@ To initialize your first scene -
   end
   ```
   
-  That is the basics to using SnapFrame.Scene. It essentially consist of three pieces, a template, a controller, and a scene module that glues them together.
+  That is the basics to using SnapFramework.Scene. It essentially consist of three pieces, a template, a controller, and a scene module that glues them together.
   
-  ## Setup Function
+  ## Setup and Mounted Callbacks
   
   If you need to do some special setup, like request input, subscribe to a PubSub service, or add some runtime assigns. You can do that in the setup callback.
   It gives you the scene struct and should return a scene struct.
