@@ -56,7 +56,7 @@ To initialize your first scene -
   Having just the above should be enough to get the scene rendering.
   But as you can see selecting a new dropdown doesn't update the text component text like the template implies that it should.
 
-  To update a graph SnapFrame has the ```use_effect``` macro. This macro comes with a Scene or Component.
+  To update a graph SnapFramework has the ```use_effect``` macro. This macro comes with a Scene or Component.
   Let's update the above code to catch the event from the dropdown and update the text.
 
   ``` elixir
