@@ -7,8 +7,6 @@ To initialize your first scene -
   ``` elixir
   <%= graph font_size: 20 %>
 
-  <%= component Examples.Component.Button, "test btn", id: :test_btn, translate: {200, 20} %>
-
   <%= primitive Scenic.Primitive.Text,
       "selected value #{@dropdown_value}",
       id: :dropdown_value_text,

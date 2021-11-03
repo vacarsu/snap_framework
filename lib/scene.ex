@@ -11,10 +11,8 @@ defmodule SnapFramework.Scene do
   In order to use this module you will first need a template. Templates are just basic EEx files.
   See an example template below
 
-  ``` elixir
+    ``` elixir
   <%= graph font_size: 20 %>
-
-  <%= component Examples.Component.Button, "test btn", id: :test_btn, translate: {200, 20} %>
 
   <%= primitive Scenic.Primitive.Text,
       "selected value #{@dropdown_value}",
@@ -63,7 +61,7 @@ defmodule SnapFramework.Scene do
   Having just the above should be enough to get the scene rendering.
   But as you can see selecting a new dropdown doesn't update the text component text like the template implies that it should.
 
-  To update a graph SnapFramework.Scene has the ```use_effect``` macro. This macro comes with a Scene or Component.
+  To update a graph SnapFramework has the ```use_effect``` macro. This macro comes with a Scene or Component.
   Let's update the above code to catch the event from the dropdown and update the text.
 
   ``` elixir
@@ -152,7 +150,7 @@ defmodule SnapFramework.Scene do
   If you need to do something after the graph is compile, you can use the mounted callback.
   Like the setup callback it gives you the scene, and should return a scene.
 
-  ```elixir
+  ``` elixir
   defmodule Example.Scene.MyScene do
     use SnapFramework.Scene,
       name: :my_scene,
