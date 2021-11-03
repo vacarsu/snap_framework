@@ -94,14 +94,14 @@ defmodule SnapFramework.Scene do
   Last but not least the controller module.
 
   ``` elixir
-  defmodule Examples.Scene.TestSceneController do
+  defmodule Examples.Scene.MySceneController do
     import Scenic.Primitives, only: [text: 3]
     alias Scenic.Graph
 
     def on_dropdown_value_change(scene) do
       graph =
         scene.assigns.graph
-        |> Graph.modify(:test_btn, &text(&1, "selected value #{scene.assigns.dropdown_value}", []))
+        |> Graph.modify(:dropdown_value_text, &text(&1, "selected value #{scene.assigns.dropdown_value}", []))
 
       Scenic.Scene.assign(scene, graph: graph)
     end
