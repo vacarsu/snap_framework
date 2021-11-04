@@ -1,4 +1,10 @@
 defmodule SnapFramework.Engine.Builder do
+  @moduledoc """
+  ## Overview
+
+  This module is responsible for taking the parsed EEx template and building the graph.
+  """
+
   def build_graph(list, acc \\ %{}) do
     Enum.reduce(list, acc, fn item, acc ->
       case item do

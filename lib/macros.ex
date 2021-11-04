@@ -2,6 +2,8 @@ defmodule SnapFramework.Macros do
   alias Scenic.Graph
   alias Scenic.Primitive
 
+  @moduledoc false
+
   defmacro input_handler do
     quote do
       def handle_input(input, id, scene) do

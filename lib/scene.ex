@@ -2,7 +2,7 @@ defmodule SnapFramework.Scene do
   alias Scenic.Scene
   require Logger
 
-  @moduledoc """
+  @moduledoc ~S"""
   ## Overview
 
   SnapFramework.Scene aims to make creating Scenic scenes easier and comes with a lot of convenient features.
@@ -188,28 +188,64 @@ defmodule SnapFramework.Scene do
 
   @optional_callbacks setup: 1, mounted: 1
 
+  @doc """
+  Called when a scene receives a call message.
+  The returned state is diffed, and effects are run.
+  """
   @callback process_call(msg :: any, from :: GenServer.from, scene :: Scene.t()) ::
     {term :: atom, scene :: Scene.t()}
 
+  @doc """
+  Called when a scene receives a message.
+  The returned state is diffed, and effects are run.
+  """
   @callback process_info(msg :: any, scene :: Scene.t()) ::
     {term :: atom, scene :: Scene.t()}
 
+  @doc """
+  Called when a scene receives an cast message.
+  The returned state is diffed, and effects are run.
+  """
   @callback process_cast(msg :: any, scene :: Scene.t()) ::
     {term :: atom, scene:: Scene.t()}
 
+  @doc """
+  Called when a scene receives an input messsage.
+  The returned state is diffed, and effects are run.
+  """
   @callback process_input(input :: any, id :: any, scene :: Scene.t()) ::
     {term :: atom, scene :: Scene.t()}
 
+  @doc """
+  Called when a scene receives an update message.
+  Use this to update data and options on your state.
+  The returned state is diffed, and effects are run.
+  """
   @callback process_update(data :: any, opts :: List.t, scene :: Scene.t()) ::
     {term :: atom, scene :: Scene.t()}
 
+  @doc """
+  Called when a scene receives an event message.
+  The returned state is diffed, and effects are run.
+  """
   @callback process_event(event :: any, from_pid :: any, scene :: Scene.t()) ::
     {term :: atom, scene :: Scene.t()}
     | {term :: atom, scene :: Scene.t(), opts :: list}
     | {term :: atom, event :: any, scene :: Scene.t()}
     | {term :: atom, event :: any, scene :: Scene.t(), opts :: list}
 
+  @doc """
+  Called when a first starts, before the graph is compiled. Use this to do any startup logic.
+  Any assigns set or updated here will be included in the compiled graph.
+  If you need to subscribe to a PubSub service do that here.
+  """
   @callback setup(scene :: Scene.t()) :: Scene.t()
+
+  @doc """
+  Called after graph is compiled.
+  If you need to do any post setup changes on your graph
+  do that here.
+  """
   @callback mounted(scene :: Scene.t()) :: Scene.t()
 
   defmacro __using__(name: name, template: template, controller: controller, assigns: assigns) do
@@ -311,53 +347,65 @@ defmodule SnapFramework.Scene do
     end
   end
 
-  defmacro use_effect([on_click: ids], term, effects) when is_list(ids) do
-    quote location: :keep, bind_quoted: [ids: ids, term: term, effects: effects] do
-      # if not @using_effects do
-      #   @using_effects true
-      #   SnapFramework.Macros.scene_handlers()
-      # end
+  @doc """
+  The use effect macro glues your scene module to your controller.
+  Whenever you return a scene from the on of the process functions, it matches against your effect registery.
+  If a match is found it then runs the specified controller function and pushed your graph if your graph has changed
 
-      for cmp_id <- ids do
-        def process_event({:click, unquote(cmp_id)} = event, _from_pid, scene) do
-          scene =
-            Enum.reduce(unquote(effects), scene, fn action, acc ->
-              case action do
-                {:set, set_actions} ->
-                  Enum.reduce(set_actions, acc, fn item, s_acc ->
-                    set(s_acc, item)
-                  end)
-                {:add, add_actions} -> Enum.reduce(add_actions, acc, fn item, s_acc -> add(s_acc, item) end)
-                {:modify, mod_actions} ->
-                  Enum.reduce(mod_actions, acc, fn item, s_acc ->
-                    modify(s_acc, item)
-                  end)
-                {:delete, del_actions} -> Enum.reduce(del_actions, acc, fn item, s_acc -> delete(s_acc, item) end)
-              end
-            end)
-          case unquote(term) do
-            :noreply -> {unquote(term), scene}
-            :cont -> {unquote(term), event, scene}
-            :halt -> {unquote(term), scene}
-            _ -> {unquote(term), scene}
-          end
-        end
-      end
-    end
-  end
 
-  defmacro use_effect(:on_put) do
-    quote do
-      # if not @using_effects do
-      #   @using_effects true
-      #   SnapFramework.Macros.scene_handlers()
-      # end
+  ``` elixir
+  use_effect [assigns: [dropdown_value: :any]], [
+      run: [:on_dropdown_value_change],
+    ]
+  ```
+  """
+  # defmacro use_effect([on_click: ids], term, effects) when is_list(ids) do
+  #   quote location: :keep, bind_quoted: [ids: ids, term: term, effects: effects] do
+  #     # if not @using_effects do
+  #     #   @using_effects true
+  #     #   SnapFramework.Macros.scene_handlers()
+  #     # end
 
-      def process_put(data, _, scene) do
-        {:reply, :ok, assign(scene, data: data)}
-      end
-    end
-  end
+  #     for cmp_id <- ids do
+  #       def process_event({:click, unquote(cmp_id)} = event, _from_pid, scene) do
+  #         scene =
+  #           Enum.reduce(unquote(effects), scene, fn action, acc ->
+  #             case action do
+  #               {:set, set_actions} ->
+  #                 Enum.reduce(set_actions, acc, fn item, s_acc ->
+  #                   set(s_acc, item)
+  #                 end)
+  #               {:add, add_actions} -> Enum.reduce(add_actions, acc, fn item, s_acc -> add(s_acc, item) end)
+  #               {:modify, mod_actions} ->
+  #                 Enum.reduce(mod_actions, acc, fn item, s_acc ->
+  #                   modify(s_acc, item)
+  #                 end)
+  #               {:delete, del_actions} -> Enum.reduce(del_actions, acc, fn item, s_acc -> delete(s_acc, item) end)
+  #             end
+  #           end)
+  #         case unquote(term) do
+  #           :noreply -> {unquote(term), scene}
+  #           :cont -> {unquote(term), event, scene}
+  #           :halt -> {unquote(term), scene}
+  #           _ -> {unquote(term), scene}
+  #         end
+  #       end
+  #     end
+  #   end
+  # end
+
+  # defmacro use_effect(:on_put) do
+  #   quote do
+  #     # if not @using_effects do
+  #     #   @using_effects true
+  #     #   SnapFramework.Macros.scene_handlers()
+  #     # end
+
+  #     def process_put(data, _, scene) do
+  #       {:reply, :ok, assign(scene, data: data)}
+  #     end
+  #   end
+  # end
 
   defmacro use_effect([assigns: ks], actions) do
     quote location: :keep, bind_quoted: [ks: ks, actions: actions] do
@@ -386,6 +434,16 @@ defmodule SnapFramework.Scene do
     end
   end
 
+  @doc """
+  The watch macro will recompile the template with the most up to date assigns, whenever one of the watched keys changes.
+  This macro is not recommended for large scene or components.
+
+  use_effect is always preferred.
+
+  ``` elixir
+  watch [:dropdown_value]
+  ```
+  """
   defmacro watch(ks) do
     quote location: :keep, bind_quoted: [ks: ks] do
       # if not @using_effects do

@@ -1,6 +1,6 @@
 defmodule SnapFramework.Engine do
   @moduledoc """
-  Pulled this from phoenix
+  The EEx template engine.
   """
 
   @behaviour EEx.Engine

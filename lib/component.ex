@@ -4,6 +4,77 @@ defmodule SnapFramework.Component do
   require SnapFramework.Macros
   require Logger
 
+  @moduledoc """
+  ## Overview
+
+  SnapFramework.Component is nearly identical to a Scene. The main different is the addition of the defcomponent macro,
+  as well as the addition of the scenic opts key.
+  defcomponent build out your scenic validate function and helper functions, automatically so you don't have to.
+
+  ``` elixir
+  defmodule Example.Component.MyComponent do
+    use SnapFramework.Component,
+      name: :my_component,
+      template: "lib/scenes/my_component.eex",
+      controller: :none,
+      assigns: [],
+      opts: []
+
+    defcomponent :my_component, :tuple
+  end
+  ```
+
+  The above example defines a component that takes in a tuple for data. and build your helper function defined as ```my_component/3```
+
+  ## Templates
+
+  Component templates also have an additional feature that primitives or scene templates do not have. You can inject children into them.
+  Lets write a basic icon button component that takes an icon child.
+
+  ``` elixir
+  # template
+  <%= graph font_size: 20 %>
+
+  <%= primitive Scenic.Primitive.Circle,
+      15,
+      id: :bg,
+      translate: {23, 23}
+  %>
+
+  @children
+
+  # component module
+  defmodule Example.Component.IconButton do
+    use SnapFramework.Component,
+      name: :icon_button,
+      template: "lib/icons/icon_button/icon_button.eex",
+      controller: :none,
+      assigns: [],
+      opts: []
+
+    defcomponent :icon_button, :any
+  end
+  ```
+
+  Now lets see how to use this component with children in a scene. This assumes we've already made an icon component.
+
+  ``` elixir
+    <%= graph font_size: 20 %>
+
+    <%= component Example.Component.IconButton,
+        nil,
+        id: :icon_button
+    do %>
+      <%= component Example.Component.Icon,
+          @icon,
+          id: :icon
+      %>
+    <% end %>
+  ```
+
+  That's all there is to putting children in components!
+  """
+
   defmacro __using__([name: name, template: template, controller: controller, assigns: assigns, opts: opts]) do
     quote do
       use SnapFramework.Scene,

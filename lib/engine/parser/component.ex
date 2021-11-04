@@ -1,6 +1,8 @@
 defmodule SnapFramework.Parser.Component do
   require Logger
 
+  @moduledoc false
+
   def run(ast) do
     ast
     |> parse()

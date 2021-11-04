@@ -1,6 +1,8 @@
 defmodule SnapFramework.Parser.Enumeration do
   require Logger
 
+  @moduledoc false
+
   def run(ast) do
     ast
     |> parse()

@@ -4,7 +4,7 @@ defmodule SnapFramework.MixProject do
   def project do
     [
       app: :snap_framework,
-      version: "0.1.0",
+      version: "0.1.0-alpha",
       elixir: "~> 1.12",
       build_embedded: false,
       start_permanent: Mix.env() == :prod,
@@ -23,6 +23,7 @@ defmodule SnapFramework.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:ex_doc, "~> 0.24", only: :dev, runtime: false},
       {:scenic, "~> 0.11.0-beta.0"},
       {:scenic_driver_local, "~> 0.11.0-beta.0"},
       {:truetype_metrics, "~> 0.5"},
