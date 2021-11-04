@@ -1,5 +1,11 @@
 ## Get Started
 
+Add Snap to your application.
+
+``` elixir
+{:snap_framework, "~> 0.1.0-alpha"}
+```
+
 Inital setup is the same as any Scenic app.
 
 To initialize your first scene -
