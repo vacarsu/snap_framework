@@ -35,9 +35,9 @@ defmodule Examples.Scene.TestScene do
     run: [:on_dropdown_value_change],
   ]
 
-  use_effect [on_click: [:test_btn]], :noreply, [
-    set: [button_text: "button clicked", text_value: "button clicked"],
-  ]
+  # use_effect [on_click: [:test_btn]], :noreply, [
+  #   set: [button_text: "button clicked", text_value: "button clicked"],
+  # ]
 
   def mounted(scene) do
     Logger.debug("callback mounted called")

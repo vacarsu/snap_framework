@@ -15,11 +15,13 @@ defmodule SnapFramework.Engine.Builder do
           acc |> module.add_to_graph(data, Keyword.put_new(opts, :children, children))
 
         [type: :component, module: module, data: data, opts: opts, children: children] ->
-
           acc |> module.add_to_graph(data, Keyword.put_new(opts, :children, children))
 
         [type: :primitive, module: module, data: data, opts: opts] ->
           acc |> module.add_to_graph(data, opts)
+
+        [type: :layout, children: children, padding: padding, width: width, height: height, translate: translate] ->
+          do_layout(acc, children, padding, width, height, translate).graph
 
         "\n" -> acc
 
@@ -32,4 +34,87 @@ defmodule SnapFramework.Engine.Builder do
       end
     end)
   end
+
+  defp do_layout(%Scenic.Graph{} = graph, children, padding, width, height, {x, y} = translate) do
+    layout = %{last_x: x, last_y: y, padding: padding, width: width, height: height, largest_width: 0, largest_height: 0, graph: graph, translate: translate}
+    Enum.reduce(children, layout, fn child, layout ->
+      case child do
+        [type: :component, module: module, data: data, opts: opts] ->
+          children = if opts[:do], do: opts[:do], else: nil
+          translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
+
+        [type: :component, module: module, data: data, opts: opts, children: children] ->
+
+          translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
+
+        [type: :primitive, module: module, data: data, opts: opts] ->
+          layout
+
+        [type: :layout, children: children, padding: padding, width: width, height: height, translate: translate] ->
+          do_layout(layout, children, padding, width, height, translate)
+      end
+    end)
+  end
+
+  defp do_layout(layout, children, padding, width, height, {x, y} = translate) do
+    {prev_x, prev_y} = layout.translate
+    layout = %{layout | last_x: x + prev_x + layout.padding, last_y: layout.last_y + y + layout.largest_height + layout.padding, padding: padding, width: width, height: height, translate: {x + prev_x, y + prev_y}}
+    Enum.reduce(children, layout, fn child, layout ->
+      case child do
+        [type: :component, module: module, data: data, opts: opts] ->
+          children = if opts[:do], do: opts[:do], else: nil
+          translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
+
+        [type: :component, module: module, data: data, opts: opts, children: children] ->
+
+          translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
+
+        [type: :primitive, module: module, data: data, opts: opts] ->
+          layout
+
+        [type: :layout, children: children, padding: padding, width: width, height: height, translate: translate] ->
+          do_layout(layout, children, padding, width, height, translate)
+      end
+    end)
+  end
+
+  defp translate_and_render(layout, module, data, opts) do
+    {l, t, r, b} = get_bounds(module, data, opts)
+    {tx, ty} = layout.translate
+    # IO.inspect layout.last_x
+    # IO.inspect l + layout.last_x + layout.padding
+    layout =
+      case fits_in_x?(r + layout.last_x + layout.padding, layout.width) do
+        true ->
+          x = l + layout.last_x + layout.padding
+          y = layout.last_y
+          IO.puts("fits in x #{inspect {x, y}}")
+          %{
+            layout |
+            last_x: r + layout.last_x + layout.padding,
+            graph: module.add_to_graph(layout.graph, data, Keyword.merge(opts, translate: {x, y}))
+          }
+        false ->
+          x = l + tx + layout.padding
+          y = t + layout.last_y + layout.largest_height + layout.padding
+          IO.puts("fits in y #{inspect {x, y}}")
+          %{
+            layout |
+            last_x: l + tx + r + layout.padding,
+            last_y: t + layout.last_y + layout.largest_height + layout.padding,
+            graph: module.add_to_graph(layout.graph, data, Keyword.merge(opts, translate: {x, y}))
+          }
+      end
+
+    layout = if r > layout.largest_width, do: %{layout | largest_width: r}, else: layout
+    if b > layout.largest_height, do: %{layout | largest_height: b}, else: layout
+  end
+
+  defp get_bounds(mod, data, opts) do
+    mod.bounds(data, opts)
+  end
+
+  defp fits_in_x?(potential_x, max_x), do: potential_x <= max_x
+
+  defp fits_in_y?(potential_y, max_y), do: potential_y <= max_y
 end

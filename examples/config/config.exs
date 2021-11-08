@@ -12,10 +12,13 @@ config :examples, :viewport, [
   size: {700, 600},
   default_scene: Examples.Scene.TestScene,
   drivers: [[
-    module: Scenic.Driver.Glfw,
+    module: Scenic.Driver.Local,
     name: :glfw,
-    title: "examples",
-    resizeable: false
+    on_close: :stop_system,
+    window: [
+      title: "SnapFramework examples",
+      resizeable: false
+    ]
   ]]
 ]
 

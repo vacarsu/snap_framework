@@ -1,23 +1,28 @@
 <%= graph font_size: 20 %>
 
-<%= component Examples.Component.Button, "test btn", id: :test_btn, translate: {200, 20} %>
+<%= layout padding: 100, width: 600, height: 600, translate: {100, 10} do %>
+    <%= component Scenic.Component.Button, "test btn", id: :test_btn %>
+    <%= component Scenic.Component.Button, "test btn", id: :test_btn %>
+    <%= component Scenic.Component.Button, "test btn", id: :test_btn %>
+    <%= component Scenic.Component.Button, "test btn", id: :test_btn %>
+    <%= component Scenic.Component.Button, "test btn", id: :test_btn %>
+    <%= component Scenic.Component.Button, "test btn", id: :test_btn %>
 
-<%= primitive Text,
-    "selected value #{@dropdown_value}",
-    id: :dropdown_value_text,
-    translate: {20, 80}
-%>
+    <%= layout padding: 0, width: 600, height: 300, translate: {10, 10} do %>
+        <%= component Scenic.Component.Input.Dropdown, {
+                @dropdown_opts,
+                @dropdown_value
+            },
+            id: :dropdown_1,
+            z_index: 100
+        %>
 
-<%= component Examples.Component.ButtonList, nil, id: :button_list, translate: {20, 200} do %>
-    <%= for {button, i} <- Enum.with_index(@buttons) do %>
-        <%= component Examples.Component.Button, button, translate: {i * 100, 0} %>
+        <%= component Scenic.Component.Input.Dropdown, {
+                @dropdown_opts,
+                @dropdown_value
+            },
+            id: :dropdown_2
+        %>
     <% end %>
 <% end %>
 
-<%= component Dropdown, {
-        @dropdown_opts,
-        @dropdown_value
-    },
-    id: :dropdown,
-    translate: {20, 20}
-%>

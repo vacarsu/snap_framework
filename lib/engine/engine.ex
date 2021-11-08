@@ -86,10 +86,11 @@ defmodule SnapFramework.Engine do
     expr
     |> Macro.prewalk(&SnapFramework.Parser.Assigns.run(&1, assigns))
     # |> Macro.prewalk(&SnapFramework.Parser.Enumeration.run/1)
+    |> Macro.prewalk(&SnapFramework.Parser.Layout.run/1)
     |> Macro.prewalk(&SnapFramework.Parser.Graph.run/1)
     |> Macro.prewalk(&SnapFramework.Parser.Component.run/1)
     |> Macro.prewalk(&SnapFramework.Parser.Primitive.run/1)
-    |> Macro.prewalk(&SnapFramework.Parser.Outlet.run(&1, assigns))
+    # |> Macro.prewalk(&SnapFramework.Parser.Outlet.run(&1, assigns))
   end
 
   @doc false
