@@ -1,6 +1,69 @@
 defmodule SnapFramework.Engine do
   @moduledoc """
   The EEx template engine.
+
+  # Overview
+
+  The SnapFramework Engine is responsible for parsing EEx templates and building graphs from them.
+
+  You should always start a template with the a graph, and then add any components and primitives immediately after it.
+
+  ``` elixir
+  <%= graph font_size: 20 %>
+
+  <%= component Scenic.Component.Button,
+      "button text",
+      id: :btn
+  %>
+
+  <%= primitive Scenic.Primitive.Rectangle,
+      {100, 100},
+      id: :rect,
+      fill: :steel_blue
+  %>
+  ```
+
+  In the above example you can see how simple it is to render component and primitives.
+
+  # Layouts
+
+  The templating engine also supports layouts.
+
+  ``` elixir
+  <%= graph font_size: 20 %>
+
+  <%= layout padding: 100, width: 600, height: 600, translate: {100, 10} do %>
+      <%= component Scenic.Component.Button, "test btn", id: :test_btn %>
+      <%= component Scenic.Component.Button, "test btn", id: :test_btn %>
+      <%= component Scenic.Component.Button, "test btn", id: :test_btn %>
+      <%= component Scenic.Component.Button, "test btn", id: :test_btn %>
+      <%= component Scenic.Component.Button, "test btn", id: :test_btn %>
+      <%= component Scenic.Component.Button, "test btn", id: :test_btn %>
+
+      <%= layout padding: 0, width: 600, height: 300, translate: {10, 10} do %>
+          <%= component Scenic.Component.Input.Dropdown, {
+                  @dropdown_opts,
+                  @dropdown_value
+              },
+              id: :dropdown_1,
+              z_index: 100
+          %>
+
+          <%= component Scenic.Component.Input.Dropdown, {
+                  @dropdown_opts,
+                  @dropdown_value
+              },
+              id: :dropdown_2
+          %>
+      <% end %>
+  <% end %>
+  ```
+
+  The only required options on templates are `width` and `height`.
+  Any nested layouts will have the padding and translate of the previous layout added onto it.
+
+  Any components rendered within a layout are added directly to the graph. Which means you can modify them directly in the scene you're working in.
+  There is no parent component that is rendered.
   """
 
   @behaviour EEx.Engine
