@@ -20,6 +20,11 @@ defmodule SnapFramework.Macros do
         {response_type, do_process(scene, new_scene)}
       end
 
+      def handle_cast(msg, scene) do
+        {response_type, new_scene} = scene.assigns.module.process_cast(msg, scene)
+        {response_type, do_process(scene, new_scene)}
+      end
+
       def handle_call(msg, from, scene) do
         {response_type, res, new_scene} = scene.assigns.module.process_call(msg, from, scene)
         {response_type, res, do_process(scene, new_scene)}
