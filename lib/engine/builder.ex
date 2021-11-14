@@ -47,11 +47,20 @@ defmodule SnapFramework.Engine.Builder do
 
           translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
 
-        [type: :primitive, module: module, data: data, opts: opts] ->
+        [type: :primitive, module: _module, data: _data, opts: _opts] ->
           layout
 
         [type: :layout, children: children, padding: padding, width: width, height: height, translate: translate] ->
           do_layout(layout, children, padding, width, height, translate)
+
+        "\n" -> layout
+
+        list ->
+          if is_list(list) do
+            do_layout(layout.graph, list, padding, width, height, translate)
+          else
+            layout
+          end
       end
     end)
   end
@@ -69,18 +78,27 @@ defmodule SnapFramework.Engine.Builder do
 
           translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
 
-        [type: :primitive, module: module, data: data, opts: opts] ->
+        [type: :primitive, module: _module, data: _data, opts: _opts] ->
           layout
 
         [type: :layout, children: children, padding: padding, width: width, height: height, translate: translate] ->
           do_layout(layout, children, padding, width, height, translate)
+
+        "\n" -> layout
+
+        list ->
+          if is_list(list) do
+            do_layout(layout.graph, list, padding, width, height, translate)
+          else
+            layout
+          end
       end
     end)
   end
 
   defp translate_and_render(layout, module, data, opts) do
     {l, t, r, b} = get_bounds(module, data, opts)
-    {tx, ty} = layout.translate
+    {tx, _ty} = layout.translate
     # IO.inspect layout.last_x
     # IO.inspect l + layout.last_x + layout.padding
     layout =
@@ -116,5 +134,5 @@ defmodule SnapFramework.Engine.Builder do
 
   defp fits_in_x?(potential_x, max_x), do: potential_x <= max_x
 
-  defp fits_in_y?(potential_y, max_y), do: potential_y <= max_y
+  # defp fits_in_y?(potential_y, max_y), do: potential_y <= max_y
 end
