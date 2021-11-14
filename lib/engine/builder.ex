@@ -47,11 +47,20 @@ defmodule SnapFramework.Engine.Builder do
 
           translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
 
-        [type: :primitive, module: module, data: data, opts: opts] ->
+        [type: :primitive, module: _module, data: _data, opts: _opts] ->
           layout
 
         [type: :layout, children: children, padding: padding, width: width, height: height, translate: translate] ->
           do_layout(layout, children, padding, width, height, translate)
+
+        "\n" -> layout
+
+        list ->
+          if is_list(list) do
+            do_layout(layout, list, padding, width, height, translate)
+          else
+            layout
+          end
       end
     end)
   end
@@ -69,26 +78,32 @@ defmodule SnapFramework.Engine.Builder do
 
           translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
 
-        [type: :primitive, module: module, data: data, opts: opts] ->
+        [type: :primitive, module: _module, data: _data, opts: _opts] ->
           layout
 
         [type: :layout, children: children, padding: padding, width: width, height: height, translate: translate] ->
           do_layout(layout, children, padding, width, height, translate)
+
+        "\n" -> layout
+
+        list ->
+          if is_list(list) do
+            do_layout(layout, list, padding, width, height, translate)
+          else
+            layout
+          end
       end
     end)
   end
 
   defp translate_and_render(layout, module, data, opts) do
     {l, t, r, b} = get_bounds(module, data, opts)
-    {tx, ty} = layout.translate
-    # IO.inspect layout.last_x
-    # IO.inspect l + layout.last_x + layout.padding
+    {tx, _ty} = layout.translate
     layout =
       case fits_in_x?(r + layout.last_x + layout.padding, layout.width) do
         true ->
           x = l + layout.last_x + layout.padding
           y = layout.last_y
-          IO.puts("fits in x #{inspect {x, y}}")
           %{
             layout |
             last_x: r + layout.last_x + layout.padding,
@@ -97,7 +112,6 @@ defmodule SnapFramework.Engine.Builder do
         false ->
           x = l + tx + layout.padding
           y = t + layout.last_y + layout.largest_height + layout.padding
-          IO.puts("fits in y #{inspect {x, y}}")
           %{
             layout |
             last_x: l + tx + r + layout.padding,
@@ -116,5 +130,5 @@ defmodule SnapFramework.Engine.Builder do
 
   defp fits_in_x?(potential_x, max_x), do: potential_x <= max_x
 
-  defp fits_in_y?(potential_y, max_y), do: potential_y <= max_y
+  # defp fits_in_y?(potential_y, max_y), do: potential_y <= max_y
 end
