@@ -57,7 +57,7 @@ defmodule SnapFramework.Engine.Builder do
 
         list ->
           if is_list(list) do
-            do_layout(layout.graph, list, padding, width, height, translate)
+            do_layout(layout, list, padding, width, height, translate)
           else
             layout
           end
@@ -88,7 +88,7 @@ defmodule SnapFramework.Engine.Builder do
 
         list ->
           if is_list(list) do
-            do_layout(layout.graph, list, padding, width, height, translate)
+            do_layout(layout, list, padding, width, height, translate)
           else
             layout
           end
@@ -99,14 +99,11 @@ defmodule SnapFramework.Engine.Builder do
   defp translate_and_render(layout, module, data, opts) do
     {l, t, r, b} = get_bounds(module, data, opts)
     {tx, _ty} = layout.translate
-    # IO.inspect layout.last_x
-    # IO.inspect l + layout.last_x + layout.padding
     layout =
       case fits_in_x?(r + layout.last_x + layout.padding, layout.width) do
         true ->
           x = l + layout.last_x + layout.padding
           y = layout.last_y
-          IO.puts("fits in x #{inspect {x, y}}")
           %{
             layout |
             last_x: r + layout.last_x + layout.padding,
@@ -115,7 +112,6 @@ defmodule SnapFramework.Engine.Builder do
         false ->
           x = l + tx + layout.padding
           y = t + layout.last_y + layout.largest_height + layout.padding
-          IO.puts("fits in y #{inspect {x, y}}")
           %{
             layout |
             last_x: l + tx + r + layout.padding,
