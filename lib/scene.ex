@@ -193,7 +193,7 @@ defmodule SnapFramework.Scene do
   The returned state is diffed, and effects are run.
   """
   @callback process_call(msg :: any, from :: GenServer.from, scene :: Scene.t()) ::
-    {term :: atom, scene :: Scene.t()}
+    {term :: atom, term :: any, scene :: Scene.t()}
 
   @doc """
   Called when a scene receives a message.
