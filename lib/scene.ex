@@ -192,61 +192,62 @@ defmodule SnapFramework.Scene do
   Called when a scene receives a call message.
   The returned state is diffed, and effects are run.
   """
-  @callback process_call(msg :: any, from :: GenServer.from, scene :: Scene.t()) ::
-    {term :: atom, term :: any, scene :: Scene.t()}
+  @callback process_call(term, GenServer.from, Scene.t()) ::
+    {atom, term, Scene.t()}
+    | {atom, Scene.t()}
 
   @doc """
   Called when a scene receives a message.
   The returned state is diffed, and effects are run.
   """
-  @callback process_info(msg :: any, scene :: Scene.t()) ::
-    {term :: atom, scene :: Scene.t()}
+  @callback process_info(any, Scene.t()) ::
+    {atom, Scene.t()}
 
   @doc """
-  Called when a scene receives an cast message.
+  Called when a scene receives a cast message.
   The returned state is diffed, and effects are run.
   """
-  @callback process_cast(msg :: any, scene :: Scene.t()) ::
-    {term :: atom, scene:: Scene.t()}
+  @callback process_cast(any, Scene.t()) ::
+    {atom, Scene.t()}
 
   @doc """
   Called when a scene receives an input messsage.
   The returned state is diffed, and effects are run.
   """
-  @callback process_input(input :: any, id :: any, scene :: Scene.t()) ::
-    {term :: atom, scene :: Scene.t()}
+  @callback process_input(term, term, Scene.t()) ::
+    {atom, Scene.t()}
 
   @doc """
   Called when a scene receives an update message.
   Use this to update data and options on your state.
   The returned state is diffed, and effects are run.
   """
-  @callback process_update(data :: any, opts :: List.t, scene :: Scene.t()) ::
-    {term :: atom, scene :: Scene.t()}
+  @callback process_update(term, List.t, Scene.t()) ::
+    {atom, Scene.t()}
 
   @doc """
   Called when a scene receives an event message.
   The returned state is diffed, and effects are run.
   """
-  @callback process_event(event :: any, from_pid :: any, scene :: Scene.t()) ::
-    {term :: atom, scene :: Scene.t()}
-    | {term :: atom, scene :: Scene.t(), opts :: list}
-    | {term :: atom, event :: any, scene :: Scene.t()}
-    | {term :: atom, event :: any, scene :: Scene.t(), opts :: list}
+  @callback process_event(term, pid, Scene.t()) ::
+    {atom, Scene.t()}
+    | {atom, Scene.t(), list}
+    | {atom, term, Scene.t()}
+    | {atom, term, Scene.t(), list}
 
   @doc """
   Called when a first starts, before the graph is compiled. Use this to do any startup logic.
   Any assigns set or updated here will be included in the compiled graph.
   If you need to subscribe to a PubSub service do that here.
   """
-  @callback setup(scene :: Scene.t()) :: Scene.t()
+  @callback setup(Scene.t()) :: Scene.t()
 
   @doc """
   Called after graph is compiled.
   If you need to do any post setup changes on your graph
   do that here.
   """
-  @callback mounted(scene :: Scene.t()) :: Scene.t()
+  @callback mounted(Scene.t()) :: Scene.t()
 
   defmacro __using__(name: name, template: template, controller: controller, assigns: assigns) do
     quote do
