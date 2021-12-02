@@ -43,7 +43,6 @@ To initialize your first scene -
   ``` elixir
   defmodule Example.Scene.MyScene do
     use SnapFramework.Scene,
-      name: :my_scene,
       template: "lib/scenes/my_scene.eex",
       controller: :none,
       assigns: [
@@ -66,7 +65,6 @@ To initialize your first scene -
   ``` elixir
   defmodule Example.Scene.MyScene do
     use SnapFramework.Scene,
-      name: :my_scene,
       template: "lib/scenes/my_scene.eex",
       controller: Example.Scene.MySceneController,
       assigns: [
@@ -118,7 +116,6 @@ To initialize your first scene -
   ``` elixir
   defmodule Example.Scene.MyScene do
     use SnapFramework.Scene,
-      name: :my_scene,
       template: "lib/scenes/my_scene.eex",
       controller: Example.Scene.MySceneController,
       assigns: [
@@ -152,7 +149,6 @@ To initialize your first scene -
   ``` elixir
   defmodule Example.Scene.MyScene do
     use SnapFramework.Scene,
-      name: :my_scene,
       template: "lib/scenes/my_scene.eex",
       controller: Example.Scene.MySceneController,
       assigns: [
