@@ -10,6 +10,7 @@ defmodule SnapFramework.Parser.Assigns do
 
   def parse({:@, meta, [{name, _, _atom}]}, assigns) do
     assign = SnapFramework.Engine.fetch_assign!(assigns, name)
+
     quote line: meta[:line] || 0 do
       unquote(Macro.escape(assign))
     end

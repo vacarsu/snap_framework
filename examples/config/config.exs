@@ -7,20 +7,21 @@ config :scenic, :assets,
   alias: []
 
 # Configure the main viewport for the Scenic application
-config :examples, :viewport, [
+config :examples, :viewport,
   name: :main_viewport,
   size: {700, 600},
   default_scene: Examples.Scene.TestScene,
-  drivers: [[
-    module: Scenic.Driver.Local,
-    name: :glfw,
-    on_close: :stop_system,
-    window: [
-      title: "SnapFramework examples",
-      resizeable: false
+  drivers: [
+    [
+      module: Scenic.Driver.Local,
+      name: :glfw,
+      on_close: :stop_system,
+      window: [
+        title: "SnapFramework examples",
+        resizeable: false
+      ]
     ]
-  ]]
-]
+  ]
 
 config :logger, backends: [RingLogger]
 

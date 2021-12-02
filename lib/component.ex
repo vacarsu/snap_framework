@@ -14,11 +14,9 @@ defmodule SnapFramework.Component do
   ``` elixir
   defmodule Example.Component.MyComponent do
     use SnapFramework.Component,
-      name: :my_component,
       template: "lib/scenes/my_component.eex",
       controller: :none,
-      assigns: [],
-      opts: []
+      assigns: []
 
     defcomponent :my_component, :tuple
   end
@@ -75,55 +73,79 @@ defmodule SnapFramework.Component do
   That's all there is to putting children in components!
   """
 
-  defmacro __using__([name: name, template: template, controller: controller, assigns: assigns, opts: opts]) do
-    quote do
-      use SnapFramework.Scene,
-        name: unquote(name),
-        template: unquote(template),
-        controller: unquote(controller),
-        assigns: unquote(assigns),
-        opts: unquote(opts)
+  @opts_schema [
+    name: [required: false, type: :atom],
+    template: [required: true, type: :string],
+    controller: [required: true, type: :any],
+    assigns: [required: true, type: :any],
+    opts: [required: false, type: :any]
+  ]
 
-      import SnapFramework.Component
-      alias Scenic.Primitives
-      require SnapFramework.Macros
-      require EEx
-      require Logger
+  defmacro __using__(opts) do
+    case NimbleOptions.validate(opts, @opts_schema) do
+      {:ok, opts} ->
+        quote do
+          use SnapFramework.Scene,
+            template: unquote(opts[:template]),
+            controller: unquote(opts[:controller]),
+            assigns: unquote(opts[:assigns]),
+            opts: unquote(opts[:opts]),
+            type: :component
 
-      Module.register_attribute(__MODULE__, :assigns, persist: true)
+          import SnapFramework.Component
+          alias Scenic.Primitives
+          require SnapFramework.Macros
+          require EEx
+          require Logger
 
-      Module.register_attribute(__MODULE__, :preload, persist: true)
-      @preload unquote(opts[:preload]) || true
+          Module.register_attribute(__MODULE__, :assigns, persist: true)
 
-      @before_compile SnapFramework.Component
+          Module.register_attribute(__MODULE__, :preload, persist: true)
+        end
+
+      {:error, error} ->
+        raise Exception.message(error)
     end
   end
 
   defmacro defcomponent(name, data_type) do
-    quote location: :keep do
+    quote do
       case unquote(data_type) do
         :string ->
           def validate(data) when is_bitstring(data), do: {:ok, data}
-          def validate(_), do: :invalid_data
+
         :number ->
           def validate(data) when is_number(data), do: {:ok, data}
-          def validate(_), do: :invalid_data
+
         :list ->
           def validate(data) when is_list(data), do: {:ok, data}
-          def validate(_), do: :invalid_data
+
         :map ->
           def validate(data) when is_map(data), do: {:ok, data}
-          def validate(_), do: :invalid_data
+
         :atom ->
           def validate(data) when is_atom(data), do: {:ok, data}
-          def validate(_), do: :invalid_data
+
         :tuple ->
           def validate(data) when is_tuple(data), do: {:ok, data}
-          def validate(_), do: :invalid_data
+
         :any ->
           def validate(data), do: {:ok, data}
+
         _ ->
           def validate(data), do: {:ok, data}
+      end
+
+      def validate(data) do
+        {
+          :error,
+          """
+          #{IO.ANSI.red()}Invalid #{__MODULE__} specification
+          Received: #{inspect(data)}
+          #{IO.ANSI.yellow()}
+          The data for a #{__MODULE__} is just the #{inspect(unquote(data_type))} string to be displayed in the button.#{IO.ANSI.default_color()}
+          """
+        }
       end
 
       def unquote(name)(graph, data, options \\ [])
@@ -132,7 +154,11 @@ defmodule SnapFramework.Component do
         add_to_graph(g, data, options)
       end
 
-      def unquote(name)(%Scenic.Primitive{module: Scenic.Primitive.Component, data: {mod, _, id}} = p, data, options) do
+      def unquote(name)(
+            %Scenic.Primitive{module: Scenic.Primitive.Component, data: {mod, _, id}} = p,
+            data,
+            options
+          ) do
         data =
           case mod.validate(data) do
             {:ok, data} -> data
@@ -151,59 +177,6 @@ defmodule SnapFramework.Component do
 
         Primitive.put(p, data, opts)
       end
-    end
-  end
-
-  defmacro __before_compile__(env) do
-    caller = __CALLER__
-    template = Module.get_attribute(env.module, :template)
-    preload = Module.get_attribute(env.module, :preload)
-    file = if preload, do: File.read!(template), else: nil
-
-    quote location: :keep do
-      def init(scene, data, opts \\ []) do
-        assigns = Keyword.merge(@assigns, [
-          module: unquote(caller.module),
-          data: data,
-          opts: opts,
-          children: opts[:children]
-        ])
-        scene =
-          scene
-          |> assign(assigns)
-          |> setup()
-          |> compile()
-          |> mounted()
-
-        {:ok, scene}
-      end
-
-      def compile(scene) do
-        info =
-          Keyword.merge(
-            [
-              assigns: scene.assigns,
-              engine: SnapFramework.Engine
-            ],
-            [
-              file: unquote(caller.file),
-              line: unquote(caller.line), trim: true
-            ]
-          )
-        compiled_list =
-          SnapFramework.Engine.compile_string(unquote(file), [
-            assigns: scene.assigns
-          ], info, __ENV__)
-
-        graph = SnapFramework.Engine.Builder.build_graph(compiled_list)
-
-        scene
-        |> assign(graph: graph)
-        |> push_graph(graph)
-      end
-
-      # SnapFramework.Macros.effect_handlers()
-      SnapFramework.Macros.effect_handlers()
     end
   end
 end

@@ -8,7 +8,8 @@ defmodule SnapFramework.Engine.Builder do
   def build_graph(list, acc \\ %{}) do
     Enum.reduce(list, acc, fn item, acc ->
       case item do
-        [type: :graph, opts: opts] -> Scenic.Graph.build(opts)
+        [type: :graph, opts: opts] ->
+          Scenic.Graph.build(opts)
 
         [type: :component, module: module, data: data, opts: opts] ->
           children = if opts[:do], do: opts[:do], else: nil
@@ -20,10 +21,18 @@ defmodule SnapFramework.Engine.Builder do
         [type: :primitive, module: module, data: data, opts: opts] ->
           acc |> module.add_to_graph(data, opts)
 
-        [type: :layout, children: children, padding: padding, width: width, height: height, translate: translate] ->
+        [
+          type: :layout,
+          children: children,
+          padding: padding,
+          width: width,
+          height: height,
+          translate: translate
+        ] ->
           do_layout(acc, children, padding, width, height, translate).graph
 
-        "\n" -> acc
+        "\n" ->
+          acc
 
         list ->
           if is_list(list) do
@@ -36,7 +45,18 @@ defmodule SnapFramework.Engine.Builder do
   end
 
   defp do_layout(%Scenic.Graph{} = graph, children, padding, width, height, {x, y} = translate) do
-    layout = %{last_x: x, last_y: y, padding: padding, width: width, height: height, largest_width: 0, largest_height: 0, graph: graph, translate: translate}
+    layout = %{
+      last_x: x,
+      last_y: y,
+      padding: padding,
+      width: width,
+      height: height,
+      largest_width: 0,
+      largest_height: 0,
+      graph: graph,
+      translate: translate
+    }
+
     Enum.reduce(children, layout, fn child, layout ->
       case child do
         [type: :component, module: module, data: data, opts: opts] ->
@@ -44,20 +64,40 @@ defmodule SnapFramework.Engine.Builder do
           translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
 
         [type: :component, module: module, data: data, opts: opts, children: children] ->
-
           translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
 
         [type: :primitive, module: _module, data: _data, opts: _opts] ->
           layout
 
-        [type: :layout, children: children, padding: padding, width: width, height: height, translate: translate] ->
-          do_layout(layout, children, padding, width, height, translate)
+        [
+          type: :layout,
+          children: children,
+          padding: padding,
+          width: width,
+          height: height,
+          translate: translate
+        ] ->
+          {x, y} = translate
+          {prev_x, prev_y} = layout.translate
+          nested_layout = %{
+            layout
+            | last_x: x + prev_x + layout.padding,
+              last_y: layout.last_y + y + layout.largest_height + layout.padding,
+              padding: padding,
+              width: width,
+              height: height,
+              translate: {x + prev_x, y + prev_y}
+          }
 
-        "\n" -> layout
+          graph = do_layout(nested_layout, children).graph
+          %{layout | graph: graph}
+
+        "\n" ->
+          layout
 
         list ->
           if is_list(list) do
-            do_layout(layout, list, padding, width, height, translate)
+            do_layout(layout, list)
           else
             layout
           end
@@ -65,9 +105,7 @@ defmodule SnapFramework.Engine.Builder do
     end)
   end
 
-  defp do_layout(layout, children, padding, width, height, {x, y} = translate) do
-    {prev_x, prev_y} = layout.translate
-    layout = %{layout | last_x: x + prev_x + layout.padding, last_y: layout.last_y + y + layout.largest_height + layout.padding, padding: padding, width: width, height: height, translate: {x + prev_x, y + prev_y}}
+  defp do_layout(layout, children) do
     Enum.reduce(children, layout, fn child, layout ->
       case child do
         [type: :component, module: module, data: data, opts: opts] ->
@@ -75,20 +113,39 @@ defmodule SnapFramework.Engine.Builder do
           translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
 
         [type: :component, module: module, data: data, opts: opts, children: children] ->
-
           translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
 
         [type: :primitive, module: _module, data: _data, opts: _opts] ->
           layout
 
-        [type: :layout, children: children, padding: padding, width: width, height: height, translate: translate] ->
-          do_layout(layout, children, padding, width, height, translate)
+        [
+          type: :layout,
+          children: children,
+          padding: padding,
+          width: width,
+          height: height,
+          translate: translate
+        ] ->
+          {x, y} = translate
+          {prev_x, prev_y} = layout.translate
+          nested_layout = %{
+            layout
+            | last_x: x + prev_x + layout.padding,
+              last_y: layout.last_y + y + layout.largest_height + layout.padding,
+              padding: padding,
+              width: width,
+              height: height,
+              translate: {x + prev_x, y + prev_y}
+          }
 
-        "\n" -> layout
+          do_layout(nested_layout, children)
+
+        "\n" ->
+          layout
 
         list ->
           if is_list(list) do
-            do_layout(layout, list, padding, width, height, translate)
+            do_layout(layout, list)
           else
             layout
           end
@@ -99,24 +156,30 @@ defmodule SnapFramework.Engine.Builder do
   defp translate_and_render(layout, module, data, opts) do
     {l, t, r, b} = get_bounds(module, data, opts)
     {tx, _ty} = layout.translate
+
     layout =
       case fits_in_x?(r + layout.last_x + layout.padding, layout.width) do
         true ->
           x = l + layout.last_x + layout.padding
           y = layout.last_y
+
           %{
-            layout |
-            last_x: r + layout.last_x + layout.padding,
-            graph: module.add_to_graph(layout.graph, data, Keyword.merge(opts, translate: {x, y}))
+            layout
+            | last_x: r + layout.last_x + layout.padding,
+              graph:
+                module.add_to_graph(layout.graph, data, Keyword.merge(opts, translate: {x, y}))
           }
+
         false ->
           x = l + tx + layout.padding
           y = t + layout.last_y + layout.largest_height + layout.padding
+
           %{
-            layout |
-            last_x: l + tx + r + layout.padding,
-            last_y: t + layout.last_y + layout.largest_height + layout.padding,
-            graph: module.add_to_graph(layout.graph, data, Keyword.merge(opts, translate: {x, y}))
+            layout
+            | last_x: l + tx + r + layout.padding,
+              last_y: t + layout.last_y + layout.largest_height + layout.padding,
+              graph:
+                module.add_to_graph(layout.graph, data, Keyword.merge(opts, translate: {x, y}))
           }
       end
 

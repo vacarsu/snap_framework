@@ -15,31 +15,35 @@ defmodule SnapFramework.Parser.Outlet do
   def parse({:outlet, meta, [slot_name, opts]}, assigns) do
     # graph_val = Macro.var(:graph_val, SnapFramework.Engine)
     slot = assigns[:state][:data][:slots][slot_name] || nil
+
     case slot do
       {nil, _, _} ->
         quote do
           nil
         end
+
       {cmp, data, nil} ->
         quote line: meta[:line] || 0 do
           # unquote(graph_val) =
-            [
-              type: :component,
-              module: unquote(cmp),
-              data: unquote(data),
-              opts: unquote(opts)
-            ]
+          [
+            type: :component,
+            module: unquote(cmp),
+            data: unquote(data),
+            opts: unquote(opts)
+          ]
         end
+
       {cmp, data, cmp_opts} ->
         quote line: meta[:line] || 0 do
           # unquote(graph_val) =
-            [
-              type: :component,
-              module: unquote(cmp),
-              data: unquote(data),
-              opts: unquote(cmp_opts)
-            ]
+          [
+            type: :component,
+            module: unquote(cmp),
+            data: unquote(data),
+            opts: unquote(cmp_opts)
+          ]
         end
+
       _ ->
         quote do
           nil
@@ -54,9 +58,14 @@ defmodule SnapFramework.Parser.Outlet do
   def parse({:outlet, _meta, [opts]}, assigns) do
     # graph_val = Macro.var(:graph_val, SnapFramework.Engine)
     slots = assigns[:state][:data][:slots] || nil
+
     Enum.reduce(slots, [], fn {:slot, slot}, acc ->
       case slot do
-        {nil, _, _} -> quote do unquote(acc) end
+        {nil, _, _} ->
+          quote do
+            unquote(acc)
+          end
+
         {cmp, data, nil} ->
           quote do
             # var!(cmp) = cmp
@@ -64,14 +73,13 @@ defmodule SnapFramework.Parser.Outlet do
             List.insert_at(
               unquote(acc),
               length(unquote(acc)),
-              [
-                type: :component,
-                module: unquote(cmp),
-                data: unquote(data),
-                opts: unquote(opts)
-              ]
+              type: :component,
+              module: unquote(cmp),
+              data: unquote(data),
+              opts: unquote(opts)
             )
           end
+
         {cmp, data, cmp_opts} ->
           quote do
             # var!(cmp) = cmp
@@ -79,15 +87,17 @@ defmodule SnapFramework.Parser.Outlet do
             List.insert_at(
               unquote(acc),
               length(unquote(acc)),
-              [
-                type: :component,
-                module: unquote(cmp),
-                data: unquote(data),
-                opts: unquote(cmp_opts)
-              ]
+              type: :component,
+              module: unquote(cmp),
+              data: unquote(data),
+              opts: unquote(cmp_opts)
             )
           end
-        _ -> quote do unquote(acc) end
+
+        _ ->
+          quote do
+            unquote(acc)
+          end
       end
     end)
   end

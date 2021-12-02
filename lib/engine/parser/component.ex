@@ -64,11 +64,11 @@ defmodule SnapFramework.Parser.Component do
   end
 
   def build_child_list({type, _, [name, data, opts]}, acc) do
-    List.insert_at(acc, length(acc), [type: type, module: name, data: data, opts: opts])
+    List.insert_at(acc, length(acc), type: type, module: name, data: data, opts: opts)
   end
 
   def build_child_list({type, _, [name, data]}, acc) do
-    List.insert_at(acc, length(acc), [type: type, module: name, data: data, opts: []])
+    List.insert_at(acc, length(acc), type: type, module: name, data: data, opts: [])
   end
 
   def build_child_list(_ast, acc) do

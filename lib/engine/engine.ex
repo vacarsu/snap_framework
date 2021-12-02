@@ -153,6 +153,7 @@ defmodule SnapFramework.Engine do
     |> Macro.prewalk(&SnapFramework.Parser.Graph.run/1)
     |> Macro.prewalk(&SnapFramework.Parser.Component.run/1)
     |> Macro.prewalk(&SnapFramework.Parser.Primitive.run/1)
+
     # |> Macro.prewalk(&SnapFramework.Parser.Outlet.run(&1, assigns))
   end
 
@@ -164,14 +165,14 @@ defmodule SnapFramework.Engine do
 
       :error ->
         raise ArgumentError, """
-          assign @#{key} not available in eex template.
+        assign @#{key} not available in eex template.
 
-          Please make sure all proper assigns have been set. If this
-          is a child template, ensure assigns are given explicitly by
-          the parent template as they are not automatically forwarded.
+        Please make sure all proper assigns have been set. If this
+        is a child template, ensure assigns are given explicitly by
+        the parent template as they are not automatically forwarded.
 
-          Available assigns: #{inspect(Enum.map(assigns, &elem(&1, 0)))}
-          """
+        Available assigns: #{inspect(Enum.map(assigns, &elem(&1, 0)))}
+        """
     end
   end
 end

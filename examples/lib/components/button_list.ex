@@ -9,5 +9,5 @@ defmodule Examples.Component.ButtonList do
     assigns: [slot: nil, slot_cmp: nil],
     opts: []
 
-  defcomponent :button_list, :any
+  defcomponent(:button_list, :any)
 end

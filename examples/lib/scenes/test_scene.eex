@@ -1,20 +1,17 @@
 <%= graph font_size: 20 %>
 
 <%= layout padding: 100, width: 600, height: 600, translate: {100, 10} do %>
-    <%= component Scenic.Component.Button, "test btn", id: :test_btn %>
-    <%= component Scenic.Component.Button, "test btn", id: :test_btn %>
-    <%= component Scenic.Component.Button, "test btn", id: :test_btn %>
-    <%= component Scenic.Component.Button, "test btn", id: :test_btn %>
-    <%= component Scenic.Component.Button, "test btn", id: :test_btn %>
-    <%= component Scenic.Component.Button, "test btn", id: :test_btn %>
+    <%= component Examples.Component.Button, "button", id: "button" %>
+    <%= for button <- @buttons do %>
+        <%= component Examples.Component.Button, button, id: button %>
+    <% end %>
 
-    <%= layout padding: 0, width: 600, height: 300, translate: {10, 10} do %>
+    <%= layout padding: 0, width: 700, height: 300, translate: {0, 0} do %>
         <%= component Scenic.Component.Input.Dropdown, {
                 @dropdown_opts,
                 @dropdown_value
             },
-            id: :dropdown_1,
-            z_index: 100
+            id: :dropdown_1
         %>
 
         <%= component Scenic.Component.Input.Dropdown, {

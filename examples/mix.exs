@@ -24,10 +24,8 @@ defmodule Examples.MixProject do
     [
       {:scenic, "~> 0.11.0-beta.0"},
       {:scenic_driver_local, "~> 0.11.0-beta.0"},
-
       {:truetype_metrics, "~> 0.5"},
       {:ex_image_info, "~> 0.2.4", runtime: false},
-
       {:dialyxir, "~> 1.1", only: :dev, runtime: false},
       {:ring_logger, "~> 0.6"},
       {:snap_framework, path: Path.relative_to_cwd("..")}

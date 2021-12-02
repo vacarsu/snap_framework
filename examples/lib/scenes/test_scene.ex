@@ -8,7 +8,6 @@ defmodule Examples.Scene.TestScene do
   require Logger
 
   use SnapFramework.Scene,
-    name: "test_scene",
     template: "lib/scenes/test_scene.eex",
     controller: Examples.Scene.TestSceneController,
     assigns: [
@@ -27,13 +26,13 @@ defmodule Examples.Scene.TestScene do
 
   # watch [:dropdown_value]
 
-  use_effect [assigns: [text_value: :any, button_text: :any]], [
+  use_effect([assigns: [text_value: :any, button_text: :any]],
     run: [:on_text_change]
-  ]
+  )
 
-  use_effect [assigns: [dropdown_value: :primitives]], [
-    run: [:on_dropdown_value_change],
-  ]
+  use_effect([assigns: [dropdown_value: :primitives]],
+    run: [:on_dropdown_value_change]
+  )
 
   # use_effect [on_click: [:test_btn]], :noreply, [
   #   set: [button_text: "button clicked", text_value: "button clicked"],
@@ -41,7 +40,7 @@ defmodule Examples.Scene.TestScene do
 
   def mounted(scene) do
     Logger.debug("callback mounted called")
-    Logger.debug(inspect scene.assigns.graph)
+    Logger.debug(inspect(scene.assigns.graph))
     scene
   end
 
@@ -49,7 +48,8 @@ defmodule Examples.Scene.TestScene do
     Logger.debug("changed")
     # {:ok, [btn_pid]} = child(scene, :test_btn)
     # Scenic.Component.put(btn_pid, "selected value #{value}")
-    {:noreply, assign(scene, dropdown_value: value, button_text: "hi", text_value: "selected value #{value}")}
+    {:noreply,
+     assign(scene, dropdown_value: value, button_text: "hi", text_value: "selected value #{value}")}
   end
 
   def process_event(_, _, scene) do

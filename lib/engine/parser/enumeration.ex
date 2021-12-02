@@ -8,17 +8,20 @@ defmodule SnapFramework.Parser.Enumeration do
     |> parse()
   end
 
-  def parse({{:., _, [{:__aliases__, _, [:Enum]}, :map]}, _, [
-    list,
-    {:fn, _,
-    [
-      {:->, _, [
-        [_var],
-        {:__block__, [], block}
-      ]}
-    ]
-  }
-  ]}) do
+  def parse(
+        {{:., _, [{:__aliases__, _, [:Enum]}, :map]}, _,
+         [
+           list,
+           {:fn, _,
+            [
+              {:->, _,
+               [
+                 [_var],
+                 {:__block__, [], block}
+               ]}
+            ]}
+         ]}
+      ) do
     for cmp_data <- Macro.expand(list, SnapFramework.Engine) do
       Macro.prewalk(block, &handle_block(&1, cmp_data))
     end

@@ -1,7 +1,4 @@
 defmodule SnapFramework.Macros do
-  alias Scenic.Graph
-  alias Scenic.Primitive
-
   @moduledoc false
 
   defmacro input_handler do
@@ -60,6 +57,7 @@ defmodule SnapFramework.Macros do
 
           {res, new_scene, opts} ->
             {res, do_process(scene, new_scene), opts}
+
           response ->
             response
         end
@@ -72,6 +70,7 @@ defmodule SnapFramework.Macros do
       defp do_process(old_scene, new_scene) do
         diff = diff_state(old_scene.assigns, new_scene.assigns)
         new_scene = process_effects(new_scene, diff)
+
         if old_scene.assigns.graph != new_scene.assigns.graph do
           push_graph(new_scene, new_scene.assigns.graph)
         else
@@ -98,7 +97,8 @@ defmodule SnapFramework.Macros do
       end
 
       defp change(scene, key, value) do
-        effect = Map.get(@effects_registry, {key, value}) || Map.get(@effects_registry, {key, :any})
+        effect =
+          Map.get(@effects_registry, {key, value}) || Map.get(@effects_registry, {key, :any})
 
         if effect do
           run_effect(effect, scene)
@@ -110,10 +110,6 @@ defmodule SnapFramework.Macros do
       defp run_effect(effect, scene) do
         Enum.reduce(effect, scene, fn {e_key, list}, acc ->
           case e_key do
-            :set -> Enum.reduce(list, acc, fn item, s_acc -> set(s_acc, item) end)
-            :add -> Enum.reduce(list, acc, fn item, s_acc -> add(s_acc, item) end)
-            :modify -> Enum.reduce(list, acc, fn item, s_acc -> modify(s_acc, item) end)
-            :delete -> Enum.reduce(list, acc, fn item, s_acc -> delete(s_acc, item) end)
             :run -> Enum.reduce(list, acc, fn item, s_acc -> run(s_acc, item) end)
             _ -> acc
           end
@@ -122,124 +118,6 @@ defmodule SnapFramework.Macros do
 
       defp run(scene, func) do
         apply(@controller, func, [scene])
-      end
-
-      defp set(scene, {key, value}) do
-        assigns = Keyword.put([], key, value)
-        new_scene = assign(scene, assigns)
-        diff = diff_state(scene.assigns, new_scene.assigns)
-        process_effects(new_scene, diff)
-      end
-
-      defp add(scene, {cmp_fun, {:assigns, assign_key}, opts}) when is_atom(assign_key) do
-        graph =
-          scene.assigns.graph
-          |> cmp_fun.(scene.assigns[assign_key], opts)
-
-        assign(scene, graph: graph)
-      end
-
-      defp add(scene, {cmp_fun, {:assigns, nested_keys}, opts}) do
-        value =
-          Enum.reduce(nested_keys, nil, fn key, acc ->
-            acc = if is_nil(acc), do: scene.assigns[key], else: acc[key]
-          end)
-
-        graph =
-          scene.assigns.graph
-          |> cmp_fun.(value, opts)
-
-        assign(scene, graph: graph)
-      end
-
-      defp add(scene, {cmp_fun, data, opts}) do
-        graph =
-          scene.assigns.graph
-          |> cmp_fun.(data, opts)
-
-        assign(scene, graph: graph)
-      end
-
-      defp modify(scene, {cmp_id, {cmp_fun, {:assigns, assign_key}}})
-      when is_atom(assign_key)
-      do
-        graph =
-          scene.assigns.graph
-          |> Graph.modify(cmp_id, fn g -> cmp_fun.(g, scene.assigns[assign_key], []) end)
-
-        assign(scene, graph: graph)
-      end
-
-      defp modify(scene, {cmp_id, {cmp_fun, {:assigns, nested_keys}}})
-      when is_list(nested_keys)
-      do
-        value =
-          Enum.reduce(nested_keys, nil, fn key, acc ->
-            acc = if is_nil(acc), do: scene.assigns[key], else: acc[key]
-          end)
-
-        graph =
-          scene.assigns.graph
-          |> Graph.modify(cmp_id, fn g -> cmp_fun.(g, value, []) end)
-
-        assign(scene, graph: graph)
-      end
-
-      defp modify(scene, {cmp_id, {cmp_fun, opts}}) when is_list(opts) do
-        graph =
-        scene.assigns.graph
-        |> Graph.modify(cmp_id, fn g -> Primitive.merge_opts(g, opts) end)
-
-        assign(scene, graph: graph)
-      end
-
-      defp modify(scene, {cmp_id, {cmp_fun, value}}) do
-        graph =
-        scene.assigns.graph
-        |> Graph.modify(cmp_id, fn g -> cmp_fun.(g, value, []) end)
-
-        assign(scene, graph: graph)
-      end
-
-      defp modify(scene, {cmp_id, {cmp_fun, {:assigns, assign_key}, opts}})
-      when is_atom(assign_key) and is_list(opts)
-      do
-        graph =
-          scene.assigns.graph
-          |> Graph.modify(cmp_id, fn g -> cmp_fun.(g, scene.assigns[assign_key], opts) end)
-
-        assign(scene, graph: graph)
-      end
-
-      defp modify(scene, {cmp_id, {cmp_fun, {:assigns, nested_keys}, opts}})
-      when is_list(nested_keys) and is_list(opts)
-      do
-        value =
-          Enum.reduce(nested_keys, nil, fn key, acc ->
-            acc = if is_nil(acc), do: scene.assigns[key], else: acc[key]
-          end)
-
-        graph =
-          scene.assigns.graph
-          |> Graph.modify(cmp_id, fn g -> cmp_fun.(g, value, opts) end)
-
-        assign(scene, graph: graph)
-      end
-
-      defp modify(scene, {cmp_id, {cmp_fun, value, opts}}) when is_list(opts) do
-        graph =
-          scene.assigns.graph
-          |> Graph.modify(cmp_id, fn g -> cmp_fun.(g, value, opts) end)
-
-        assign(scene, graph: graph)
-      end
-
-      defp delete(scene, cmp_id) do
-        graph =
-        scene.assigns.graph
-        |> Graph.delete(cmp_id)
-
-        assign(scene, graph: graph)
       end
     end
   end
