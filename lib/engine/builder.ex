@@ -46,8 +46,8 @@ defmodule SnapFramework.Engine.Builder do
 
   defp do_layout(%Scenic.Graph{} = graph, children, padding, width, height, {x, y} = translate) do
     layout = %{
-      last_x: x,
-      last_y: y,
+      last_x: 0,
+      last_y: 0,
       padding: padding,
       width: width,
       height: height,
@@ -80,9 +80,9 @@ defmodule SnapFramework.Engine.Builder do
           {x, y} = translate
           {prev_x, prev_y} = layout.translate
           nested_layout = %{
-            layout
-            | last_x: x + prev_x + layout.padding,
-              last_y: layout.last_y + y + layout.largest_height + layout.padding,
+            layout |
+            # | last_x: x + prev_x + layout.padding,
+            #   last_y: layout.last_y + y + layout.largest_height + layout.padding,
               padding: padding,
               width: width,
               height: height,
@@ -129,9 +129,9 @@ defmodule SnapFramework.Engine.Builder do
           {x, y} = translate
           {prev_x, prev_y} = layout.translate
           nested_layout = %{
-            layout
-            | last_x: x + prev_x + layout.padding,
-              last_y: layout.last_y + y + layout.largest_height + layout.padding,
+            layout |
+            # | last_x: x + prev_x + layout.padding,
+            #   last_y: layout.last_y + y + layout.largest_height + layout.padding,
               padding: padding,
               width: width,
               height: height,
@@ -155,13 +155,13 @@ defmodule SnapFramework.Engine.Builder do
 
   defp translate_and_render(layout, module, data, opts) do
     {l, t, r, b} = get_bounds(module, data, opts)
-    {tx, _ty} = layout.translate
+    {tx, ty} = layout.translate
 
     layout =
       case fits_in_x?(r + layout.last_x + layout.padding, layout.width) do
         true ->
-          x = l + layout.last_x + layout.padding
-          y = layout.last_y
+          x = l + layout.last_x + layout.padding + tx
+          y = layout.last_y + ty
 
           %{
             layout
