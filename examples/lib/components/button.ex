@@ -6,7 +6,7 @@ defmodule Examples.Component.Button do
     controller: Examples.Component.ButtonController,
     assigns: [icon: "test", text: "test"]
 
-  defcomponent(:button, :string)
+  defcomponent(:button, :any)
 
   # watch [:data, :opts]
 

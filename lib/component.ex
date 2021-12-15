@@ -136,20 +136,21 @@ defmodule SnapFramework.Component do
           def validate(data), do: {:ok, data}
       end
 
-      def validate(data) do
-        {
-          :error,
-          """
-          #{IO.ANSI.red()}Invalid #{__MODULE__} specification
-          Received: #{inspect(data)}
-          #{IO.ANSI.yellow()}
-          The data for a #{__MODULE__} is just the #{inspect(unquote(data_type))} string to be displayed in the button.#{IO.ANSI.default_color()}
-          """
-        }
+      if unquote(data_type) != :any do
+        def validate(data) do
+          {
+            :error,
+            """
+            #{IO.ANSI.red()}Invalid #{__MODULE__} specification
+            Received: #{inspect(data)}
+            #{IO.ANSI.yellow()}
+            The data for a #{__MODULE__} is just the #{inspect(unquote(data_type))} string to be displayed in the button.#{IO.ANSI.default_color()}
+            """
+          }
+        end
       end
 
       def unquote(name)(graph, data, options \\ [])
-
       def unquote(name)(%Graph{} = g, data, options) do
         add_to_graph(g, data, options)
       end

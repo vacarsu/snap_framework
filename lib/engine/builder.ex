@@ -44,7 +44,7 @@ defmodule SnapFramework.Engine.Builder do
     end)
   end
 
-  defp do_layout(%Scenic.Graph{} = graph, children, padding, width, height, {x, y} = translate) do
+  defp do_layout(%Scenic.Graph{} = graph, children, padding, width, height, translate) do
     layout = %{
       last_x: 0,
       last_y: 0,
