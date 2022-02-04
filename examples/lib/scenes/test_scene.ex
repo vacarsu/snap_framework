@@ -45,7 +45,6 @@ defmodule Examples.Scene.TestScene do
   end
 
   def process_event({:value_changed, :dropdown, value}, _, scene) do
-    Logger.debug("changed")
     # {:ok, [btn_pid]} = child(scene, :test_btn)
     # Scenic.Component.put(btn_pid, "selected value #{value}")
     {:noreply,

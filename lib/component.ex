@@ -1,9 +1,4 @@
 defmodule SnapFramework.Component do
-  alias Scenic.Graph
-  alias Scenic.Primitive
-  require SnapFramework.Macros
-  require Logger
-
   @moduledoc """
   ## Overview
 
@@ -74,7 +69,8 @@ defmodule SnapFramework.Component do
   """
 
   @opts_schema [
-    name: [required: false, type: :atom],
+    name: [required: false, type: :atom, default: nil],
+    type: [required: false, type: :atom, default: :any],
     template: [required: true, type: :string],
     controller: [required: true, type: :any],
     assigns: [required: true, type: :any],
@@ -85,22 +81,10 @@ defmodule SnapFramework.Component do
     case NimbleOptions.validate(opts, @opts_schema) do
       {:ok, opts} ->
         quote do
-          use SnapFramework.Scene,
-            template: unquote(opts[:template]),
-            controller: unquote(opts[:controller]),
-            assigns: unquote(opts[:assigns]),
-            opts: unquote(opts[:opts]),
-            type: :component
-
-          import SnapFramework.Component
-          alias Scenic.Primitives
-          require SnapFramework.Macros
-          require EEx
-          require Logger
-
-          Module.register_attribute(__MODULE__, :assigns, persist: true)
-
-          Module.register_attribute(__MODULE__, :preload, persist: true)
+          unquote(prelude(opts))
+          unquote(deps())
+          unquote(defs())
+          unquote(defcmp(opts))
         end
 
       {:error, error} ->
@@ -108,7 +92,37 @@ defmodule SnapFramework.Component do
     end
   end
 
-  defmacro defcomponent(name, data_type) do
+  defp prelude(opts) do
+    quote do
+      @behaviour SnapFramework.Component
+      use SnapFramework.Scene,
+        template: unquote(opts[:template]),
+        controller: unquote(opts[:controller]),
+        assigns: unquote(opts[:assigns]),
+        opts: unquote(opts[:opts]),
+        type: :component
+    end
+  end
+
+  defp deps() do
+    quote do
+      alias Scenic.Graph
+      require EEx
+      require Logger
+      import SnapFramework.Component
+    end
+  end
+
+  defp defs() do
+    quote do
+      Module.register_attribute(__MODULE__, :assigns, persist: true)
+      Module.register_attribute(__MODULE__, :preload, persist: true)
+    end
+  end
+
+  defp defcmp(opts) do
+    name = opts[:name]
+    data_type = opts[:type]
     quote do
       case unquote(data_type) do
         :string ->
@@ -132,8 +146,8 @@ defmodule SnapFramework.Component do
         :any ->
           def validate(data), do: {:ok, data}
 
-        _ ->
-          def validate(data), do: {:ok, data}
+        nil ->
+          def validate(data) when is_nil(data), do: {:ok, data}
       end
 
       if unquote(data_type) != :any do

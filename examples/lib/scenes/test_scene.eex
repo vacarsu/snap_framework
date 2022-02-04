@@ -2,6 +2,7 @@
 
 <%= layout padding: 100, width: 600, height: 600, translate: {100, 10} do %>
     <%= component Examples.Component.Button, "button", id: "button" %>
+
     <%= for button <- @buttons do %>
         <%= component Examples.Component.Button, button, id: button %>
     <% end %>
@@ -11,7 +12,7 @@
                 @dropdown_opts,
                 @dropdown_value
             },
-            id: :dropdown_1
+            id: :dropdown
         %>
 
         <%= component Scenic.Component.Input.Dropdown, {

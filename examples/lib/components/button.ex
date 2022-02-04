@@ -2,11 +2,12 @@ defmodule Examples.Component.Button do
   import Scenic.Primitives, only: [text: 3, rounded_rectangle: 3]
 
   use SnapFramework.Component,
+    name: :button,
     template: "lib/components/button.eex",
     controller: Examples.Component.ButtonController,
     assigns: [icon: "test", text: "test"]
 
-  defcomponent(:button, :any)
+  # defcomponent(:button, :any)
 
   # watch [:data, :opts]
 

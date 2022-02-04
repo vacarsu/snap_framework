@@ -1,7 +1,7 @@
 defmodule SnapFramework.MixProject do
   use Mix.Project
 
-  @version "0.1.0-beta"
+  @version "0.2.0-beta"
   @github "https://github.com/vacarsu/snap_framework"
 
   def project do
@@ -9,7 +9,7 @@ defmodule SnapFramework.MixProject do
       app: :snap_framework,
       name: "SnapFramework",
       version: @version,
-      elixir: "~> 1.12",
+      elixir: "~> 1.13",
       package: package(),
       description: description(),
       docs: docs(),

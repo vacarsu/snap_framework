@@ -4,8 +4,10 @@ defmodule Examples.Scene.TestSceneController do
   import Examples.Component.Button, only: [button: 3]
   import Examples.Component.ButtonList, only: [button_list: 3]
   alias Scenic.Graph
+  require Logger
 
   def on_text_change(scene) do
+    Logger.debug("changed")
     graph =
       scene.assigns.graph
       |> Graph.modify(:dropdown_value_text, &text(&1, scene.assigns.text_value, []))
