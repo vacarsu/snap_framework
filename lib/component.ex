@@ -180,7 +180,7 @@ defmodule SnapFramework.Component do
             {:error, msg} -> raise msg
           end
 
-        Primitive.put(p, {__MODULE__, data, id}, options)
+        Scenic.Primitive.put(p, {__MODULE__, data, id}, options)
       end
 
       def unquote(name)(%Scenic.Primitive{module: mod} = p, data, opts) do
@@ -190,7 +190,7 @@ defmodule SnapFramework.Component do
             {:error, error} -> raise Exception.message(error)
           end
 
-        Primitive.put(p, data, opts)
+        Scenic.Primitive.put(p, data, opts)
       end
     end
   end
