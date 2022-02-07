@@ -30,18 +30,20 @@ defmodule Examples.Scene.TestScene do
   #   run: [:on_text_change]
   # )
 
-  use_effect([assigns: [dropdown_value: :any]], run: [:on_dropdown_value_change, :on_text_change])
+  use_effect(:dropdown_value, [:on_dropdown_value_change, :on_text_change])
 
   # use_effect [on_click: [:test_btn]], :noreply, [
   #   set: [button_text: "button clicked", text_value: "button clicked"],
   # ]
 
+  @impl true
   def mounted(scene) do
     Logger.debug("callback mounted called")
     Logger.debug(inspect(scene.assigns.graph))
     scene
   end
 
+  @impl true
   def process_event({:value_changed, :dropdown, value}, _, scene) do
     # {:ok, [btn_pid]} = child(scene, :test_btn)
     # Scenic.Component.put(btn_pid, "selected value #{value}")

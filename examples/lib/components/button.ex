@@ -10,24 +10,23 @@ defmodule Examples.Component.Button do
 
   use_effect(:data, :on_data_change)
 
+  @impl true
   def setup(scene) do
     assign(scene, icon: scene.assigns.data, text: scene.assigns.data)
   end
 
+  @impl true
   def bounds(data, opts) do
     {0, 0, 100, 50}
   end
 
+  @impl true
   def process_input({:cursor_button, {0, :release, _, _}}, id, scene) do
     send_parent_event(scene, {:click, scene.assigns.opts[:id]})
     {:noreply, scene}
   end
 
   def process_input(_, _, scene) do
-    {:noreply, scene}
-  end
-
-  def process_info(:test, scene) do
     {:noreply, scene}
   end
 end

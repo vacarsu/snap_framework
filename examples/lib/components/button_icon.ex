@@ -8,8 +8,8 @@ defmodule Examples.Component.ButtonIcon do
 
   use_effect(:data, :on_data_change)
 
+  @impl true
   def setup(scene) do
-    send(scene.parent, :test)
     scene
   end
 end

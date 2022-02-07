@@ -256,12 +256,15 @@ defmodule SnapFramework.Scene do
   """
   @callback mounted(Scene.t()) :: Scene.t()
 
-  @optional_callbacks process_event: 3,
+  @optional_callbacks process_call: 3,
+                      process_info: 2,
+                      process_cast: 2,
                       process_input: 3,
-                      process_get: 2,
                       process_put: 2,
+                      process_get: 2,
                       process_fetch: 2,
                       process_update: 3,
+                      process_event: 3,
                       setup: 1,
                       mounted: 1
 
@@ -272,74 +275,6 @@ defmodule SnapFramework.Scene do
     opts: [required: false, type: :any, default: []],
     type: [required: false, type: :atom, default: :scene]
   ]
-
-  defmacro __before_compile__(env) do
-    caller = __CALLER__
-    template = Module.get_attribute(env.module, :template)
-    file = File.read!(template)
-    Module.put_attribute(env.module, :tmp_file, file)
-
-    quote do
-      def init(scene, data, opts) do
-        assigns =
-          Keyword.merge(@assigns,
-            module: unquote(caller.module),
-            data: data,
-            opts: opts,
-            children: opts[:children] || []
-          )
-
-        scene =
-          scene
-          |> assign(assigns)
-          |> setup()
-          |> compile(unquote(file))
-          |> mounted()
-
-        {:ok, scene}
-      end
-
-      unquote(scene_handlers())
-    end
-  end
-
-  defmacro __using__(opts) do
-    case NimbleOptions.validate(opts, @opts_schema) do
-      {:ok, opts} ->
-        quote do
-          unquote(prelude(opts))
-          unquote(deps())
-          unquote(defs(opts))
-        end
-
-        {:error, error} ->
-          raise Exception.message(error)
-    end
-  end
-
-  @spec compile(Scenic.Scene.t(), binary) :: Scenic.Scene.t()
-  def compile(scene, file) do
-    info =
-      Keyword.merge(
-        [assigns: scene.assigns, engine: SnapFramework.Engine],
-        # file: unquote(caller.file),
-        # line: unquote(caller.line),
-        trim: true
-      )
-
-    graph =
-      SnapFramework.Engine.compile_string(
-        file,
-        [assigns: scene.assigns],
-        info,
-        __ENV__
-      )
-      |> SnapFramework.Engine.Builder.build_graph()
-
-    scene
-    |> Scenic.Scene.assign(graph: graph)
-    |> Scenic.Scene.push_graph(graph)
-  end
 
   defmacro use_effect([assigns: ks], [run: list] = actions) when is_list(list) do
     register_effects(ks, actions)
@@ -397,6 +332,78 @@ defmodule SnapFramework.Scene do
     end
   end
 
+  defmacro __before_compile__(env) do
+    caller = __CALLER__
+    template = Module.get_attribute(env.module, :template)
+    file = File.read!(template)
+    Module.put_attribute(env.module, :tmp_file, file)
+
+    quote do
+      def init(scene, data, opts) do
+        assigns =
+          Keyword.merge(@assigns,
+            module: unquote(caller.module),
+            data: data,
+            opts: opts,
+            children: opts[:children] || []
+          )
+
+        scene =
+          scene
+          |> assign(assigns)
+          |> setup()
+          |> compile(unquote(file))
+          |> mounted()
+
+        {:ok, scene}
+      end
+
+      defp do_process(scene, new_scene) do
+        SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller)
+      end
+
+      # unquote(scene_handlers())
+    end
+  end
+
+  defmacro __using__(opts) do
+    case NimbleOptions.validate(opts, @opts_schema) do
+      {:ok, opts} ->
+        quote do
+          unquote(prelude(opts))
+          unquote(deps())
+          unquote(defs(opts))
+        end
+
+        {:error, error} ->
+          raise Exception.message(error)
+    end
+  end
+
+  @spec compile(Scenic.Scene.t(), binary) :: Scenic.Scene.t()
+  def compile(scene, file) do
+    info =
+      Keyword.merge(
+        [assigns: scene.assigns, engine: SnapFramework.Engine],
+        # file: unquote(caller.file),
+        # line: unquote(caller.line),
+        trim: true
+      )
+
+    graph =
+      SnapFramework.Engine.compile_string(
+        file,
+        [assigns: scene.assigns],
+        info,
+        __ENV__
+      )
+      |> SnapFramework.Engine.Builder.build_graph()
+
+    scene
+    |> Scenic.Scene.assign(graph: graph)
+    |> Scenic.Scene.push_graph(graph)
+  end
+
   defp prelude(opts) do
     case opts[:type] do
       :component ->
@@ -420,10 +427,8 @@ defmodule SnapFramework.Scene do
 
   defp defs(opts) do
     quote do
-      require Logger
       @name unquote(opts[:name])
       @template unquote(opts[:template])
-      Logger.debug(inspect Module.get_attribute(__MODULE__, :tmp_file))
       @tmp_file Module.get_attribute(__MODULE__, :tmp_file)
       @controller unquote(opts[:controller])
       @external_resource @template
@@ -435,11 +440,11 @@ defmodule SnapFramework.Scene do
       def setup(scene), do: scene
       def mounted(scene), do: scene
       def terminate(_, scene), do: {:noreply, scene}
-      def process_call(msg, from, scene), do: {:noreply, scene}
-      def process_info(msg, scene), do: {:noreply, scene}
-      def process_cast(msg, scene), do: {:noreply, scene}
-      def process_input(input, id, scene), do: {:noreply, scene}
-      def process_event(event, from_pid, scene), do: {:cont, event, scene}
+      def process_call(_msg, _from, scene), do: {:reply, scene, scene}
+      def process_info(_msg, scene), do: {:noreply, scene}
+      def process_cast(_msg, scene), do: {:noreply, scene}
+      def process_input(_input, _id, scene), do: {:noreply, scene}
+      def process_event(event, _from_pid, scene), do: {:cont, event, scene}
       def process_put({k, v}, scene), do: {:noreply, assign(scene, Keyword.put_new(Keyword.new(), k, v))}
       def process_get(_, scene), do: {:reply, scene, scene}
       def process_fetch(_, scene), do: {:reply, scene, scene}
@@ -448,14 +453,19 @@ defmodule SnapFramework.Scene do
           assign(scene, data: data, opts: Keyword.merge(scene.assigns.opts, opts))}
       end
 
-      defoverridable process_call: 3,
-                    process_info: 2,
-                    process_cast: 2,
-                    process_input: 3,
-                    process_update: 3,
-                    process_event: 3,
-                    setup: 1,
-                    mounted: 1
+      unquote(scene_handlers())
+
+      defoverridable  setup: 1,
+                      mounted: 1,
+                      process_call: 3,
+                      process_info: 2,
+                      process_cast: 2,
+                      process_input: 3,
+                      process_put: 2,
+                      process_get: 2,
+                      process_fetch: 2,
+                      process_update: 3,
+                      process_event: 3
     end
   end
 
@@ -463,42 +473,42 @@ defmodule SnapFramework.Scene do
     quote do
       def handle_input(input, id, scene) do
         {response_type, new_scene} = scene.module.process_input(input, id, scene)
-        {response_type, SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller)}
+        {response_type, do_process(scene, new_scene)}
       end
 
       def handle_info(msg, scene) do
         {response_type, new_scene} = scene.module.process_info(msg, scene)
-        {response_type, SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller)}
+        {response_type, do_process(scene, new_scene)}
       end
 
       def handle_cast(msg, scene) do
         {response_type, new_scene} = scene.module.process_cast(msg, scene)
-        {response_type, SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller)}
+        {response_type, do_process(scene, new_scene)}
       end
 
       def handle_call(msg, from, scene) do
         {response_type, res, new_scene} = scene.module.process_call(msg, from, scene)
-        {response_type, res, SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller)}
+        {response_type, res, do_process(scene, new_scene)}
       end
 
       def handle_update(msg, opts, scene) do
         {response_type, new_scene} = scene.module.process_update(msg, opts, scene)
-        {response_type, SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller)}
+        {response_type, do_process(scene, new_scene)}
       end
 
       def handle_event(event, from_pid, scene) do
         case scene.module.process_event(event, from_pid, scene) do
           {:cont, event, new_scene} ->
-            {:cont, event, SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller)}
+            {:cont, event, do_process(scene, new_scene)}
 
           {:cont, event, new_scene, opts} ->
-            {:cont, event, SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller), opts}
+            {:cont, event, do_process(scene, new_scene), opts}
 
           {res, new_scene} ->
-            {res, SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller)}
+            {res, do_process(scene, new_scene)}
 
           {res, new_scene, opts} ->
-            {res, SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller), opts}
+            {res, do_process(scene, new_scene), opts}
 
           response ->
             response
@@ -509,8 +519,6 @@ defmodule SnapFramework.Scene do
 
   defp register_effects(ks, actions) do
     quote bind_quoted: [ks: ks, actions: actions] do
-      require Logger
-      Logger.debug(inspect @effects_registry)
       @effects_registry Enum.reduce(ks, @effects_registry, fn
         kv, acc ->
           if Map.has_key?(acc, kv) do

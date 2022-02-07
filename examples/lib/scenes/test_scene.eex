@@ -1,7 +1,7 @@
 <%= graph font_size: 20 %>
 
 <%= layout padding: 100, width: 600, height: 600, translate: {100, 10} do %>
-    <%= component Examples.Component.Button, "button", id: "button" %>
+    <%= component Examples.Component.Button, "button", id: :test_btn %>
 
     <%= for button <- @buttons do %>
         <%= component Examples.Component.Button, button, id: button %>
