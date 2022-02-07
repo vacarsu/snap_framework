@@ -361,8 +361,6 @@ defmodule SnapFramework.Scene do
       defp do_process(scene, new_scene) do
         SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller)
       end
-
-      # unquote(scene_handlers())
     end
   end
 
@@ -380,13 +378,10 @@ defmodule SnapFramework.Scene do
     end
   end
 
-  @spec compile(Scenic.Scene.t(), binary) :: Scenic.Scene.t()
   def compile(scene, file) do
     info =
       Keyword.merge(
         [assigns: scene.assigns, engine: SnapFramework.Engine],
-        # file: unquote(caller.file),
-        # line: unquote(caller.line),
         trim: true
       )
 

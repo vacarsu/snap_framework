@@ -1,26 +1,16 @@
 <%= graph font_size: 20 %>
 
-<%= layout padding: 100, width: 600, height: 600, translate: {100, 10} do %>
-    <%= component Examples.Component.Button, "button", id: :test_btn %>
-
-    <%= for button <- @buttons do %>
-        <%= component Examples.Component.Button, button, id: button %>
+<%= grid item_width: 80, item_height: 50, translate: {5, 100} do %>
+    <%= row do %>
+       <%= text  "Hi" %>
+       <%= text  "Hi" %>
+       <%= text  "Hi" %>
+       <%= text  "Hi" %>
     <% end %>
 
-    <%= layout padding: 0, width: 700, height: 300, translate: {0, 0} do %>
-        <%= component Scenic.Component.Input.Dropdown, {
-                @dropdown_opts,
-                @dropdown_value
-            },
-            id: :dropdown
-        %>
-
-        <%= component Scenic.Component.Input.Dropdown, {
-                @dropdown_opts,
-                @dropdown_value
-            },
-            id: :dropdown_2
-        %>
+    <%= col do %>
+        <%= text  "Hi" %>
+        <%= text  "Hi" %>
     <% end %>
 <% end %>
 

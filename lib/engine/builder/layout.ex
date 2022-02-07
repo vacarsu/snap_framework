@@ -1,50 +1,11 @@
-defmodule SnapFramework.Engine.Builder do
+defmodule SnapFramework.Engine.Builder.Layout do
   @moduledoc """
   ## Overview
 
-  This module is responsible for taking the parsed EEx template and building the graph.
+  This module is responsible for taking the parsed EEx layout and builds the graph.
   """
 
-  def build_graph(list, acc \\ %{}) do
-    Enum.reduce(list, acc, fn item, acc ->
-      case item do
-        [type: :graph, opts: opts] ->
-          Scenic.Graph.build(opts)
-
-        [type: :component, module: module, data: data, opts: opts] ->
-          children = if opts[:do], do: opts[:do], else: nil
-          acc |> module.add_to_graph(data, Keyword.put_new(opts, :children, children))
-
-        [type: :component, module: module, data: data, opts: opts, children: children] ->
-          acc |> module.add_to_graph(data, Keyword.put_new(opts, :children, children))
-
-        [type: :primitive, module: module, data: data, opts: opts] ->
-          acc |> module.add_to_graph(data, opts)
-
-        [
-          type: :layout,
-          children: children,
-          padding: padding,
-          width: width,
-          height: height,
-          translate: translate
-        ] ->
-          do_layout(acc, children, padding, width, height, translate).graph
-
-        "\n" ->
-          acc
-
-        list ->
-          if is_list(list) do
-            build_graph(list, acc)
-          else
-            acc
-          end
-      end
-    end)
-  end
-
-  defp do_layout(%Scenic.Graph{} = graph, children, padding, width, height, translate) do
+  def build_layout(%Scenic.Graph{} = graph, children, padding, width, height, translate) do
     layout = %{
       last_x: 0,
       last_y: 0,
@@ -89,7 +50,7 @@ defmodule SnapFramework.Engine.Builder do
               translate: {x + prev_x, y + prev_y}
           }
 
-          graph = do_layout(nested_layout, children).graph
+          graph = build_layout(nested_layout, children).graph
           %{layout | graph: graph}
 
         "\n" ->
@@ -97,7 +58,7 @@ defmodule SnapFramework.Engine.Builder do
 
         list ->
           if is_list(list) do
-            do_layout(layout, list)
+            build_layout(layout, list)
           else
             layout
           end
@@ -105,7 +66,7 @@ defmodule SnapFramework.Engine.Builder do
     end)
   end
 
-  defp do_layout(layout, children) do
+  defp build_layout(layout, children) do
     Enum.reduce(children, layout, fn child, layout ->
       case child do
         [type: :component, module: module, data: data, opts: opts] ->
@@ -138,14 +99,14 @@ defmodule SnapFramework.Engine.Builder do
               translate: {x + prev_x, y + prev_y}
           }
 
-          do_layout(nested_layout, children)
+          build_layout(nested_layout, children)
 
         "\n" ->
           layout
 
         list ->
           if is_list(list) do
-            do_layout(layout, list)
+            build_layout(layout, list)
           else
             layout
           end
