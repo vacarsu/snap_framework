@@ -9,11 +9,11 @@ defmodule SnapFramework.Component do
   ``` elixir
   defmodule Example.Component.MyComponent do
     use SnapFramework.Component,
+      name: :my_component,
+      type: :tuple,
       template: "lib/scenes/my_component.eex",
       controller: :none,
       assigns: []
-
-    defcomponent :my_component, :tuple
   end
   ```
 
@@ -44,8 +44,6 @@ defmodule SnapFramework.Component do
       controller: :none,
       assigns: [],
       opts: []
-
-    defcomponent :icon_button, :any
   end
   ```
 
@@ -69,8 +67,8 @@ defmodule SnapFramework.Component do
   """
 
   @opts_schema [
-    name: [required: false, type: :atom, default: nil],
-    type: [required: false, type: :atom, default: :any],
+    name: [required: true, type: :atom],
+    type: [required: false, type: :atom, default: nil],
     template: [required: true, type: :string],
     controller: [required: true, type: :any],
     assigns: [required: true, type: :any],
@@ -107,8 +105,6 @@ defmodule SnapFramework.Component do
   defp deps() do
     quote do
       alias Scenic.Graph
-      require EEx
-      require Logger
       import SnapFramework.Component
     end
   end
@@ -158,7 +154,7 @@ defmodule SnapFramework.Component do
             #{IO.ANSI.red()}Invalid #{__MODULE__} specification
             Received: #{inspect(data)}
             #{IO.ANSI.yellow()}
-            The data for a #{__MODULE__} is just the #{inspect(unquote(data_type))} string to be displayed in the button.#{IO.ANSI.default_color()}
+            The data for  #{__MODULE__} is just the #{inspect(unquote(data_type))} to be displayed in the component.#{IO.ANSI.default_color()}
             """
           }
         end

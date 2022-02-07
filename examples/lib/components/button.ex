@@ -3,17 +3,12 @@ defmodule Examples.Component.Button do
 
   use SnapFramework.Component,
     name: :button,
+    type: :string,
     template: "lib/components/button.eex",
     controller: Examples.Component.ButtonController,
     assigns: [icon: "test", text: "test"]
 
-  # defcomponent(:button, :any)
-
-  # watch [:data, :opts]
-
-  use_effect([assigns: [text: :any]],
-    run: [:on_data_change]
-  )
+  use_effect(:data, :on_data_change)
 
   def setup(scene) do
     assign(scene, icon: scene.assigns.data, text: scene.assigns.data)
@@ -33,7 +28,6 @@ defmodule Examples.Component.Button do
   end
 
   def process_info(:test, scene) do
-    Logger.debug("working")
     {:noreply, scene}
   end
 end

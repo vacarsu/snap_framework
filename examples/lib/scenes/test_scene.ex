@@ -26,13 +26,11 @@ defmodule Examples.Scene.TestScene do
 
   # watch [:dropdown_value]
 
-  use_effect([assigns: [text_value: :any, button_text: :any]],
-    run: [:on_text_change]
-  )
+  # use_effect([assigns: [text_value: :any, button_text: :any]],
+  #   run: [:on_text_change]
+  # )
 
-  use_effect([assigns: [dropdown_value: :primitives]],
-    run: [:on_dropdown_value_change]
-  )
+  use_effect([assigns: [dropdown_value: :any]], run: [:on_dropdown_value_change, :on_text_change])
 
   # use_effect [on_click: [:test_btn]], :noreply, [
   #   set: [button_text: "button clicked", text_value: "button clicked"],
@@ -47,6 +45,8 @@ defmodule Examples.Scene.TestScene do
   def process_event({:value_changed, :dropdown, value}, _, scene) do
     # {:ok, [btn_pid]} = child(scene, :test_btn)
     # Scenic.Component.put(btn_pid, "selected value #{value}")
+    Logger.debug(inspect @effects_registry)
+    Logger.debug("event hit")
     {:noreply,
      assign(scene, dropdown_value: value, button_text: "hi", text_value: "selected value #{value}")}
   end

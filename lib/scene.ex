@@ -1,4 +1,5 @@
 defmodule SnapFramework.Scene do
+  require Logger
   @moduledoc ~S"""
   ## Overview
 
@@ -74,9 +75,7 @@ defmodule SnapFramework.Scene do
         dropdown_value: :dashboard,
       ]
 
-    use_effect [assigns: [dropdown_value: :any]], [
-      run: [:on_dropdown_value_change],
-    ]
+    use_effect :dropdown_value, :on_dropdown_value_change
 
     def process_event({:value_changed, :dropdown, value}, _, scene) do
       {:noreply, assign(scene, dropdown_value: value)}
@@ -125,9 +124,7 @@ defmodule SnapFramework.Scene do
         dropdown_value: :dashboard,
       ]
 
-    use_effect [assigns: [dropdown_value: :any]], [
-      run: [:on_dropdown_value_change],
-    ]
+    use_effect :dropdown_value, :on_dropdown_value_change
 
     def setup(scene) do
       Scenic.PubSub.subscribe(:pubsub_service)
@@ -158,9 +155,7 @@ defmodule SnapFramework.Scene do
         dropdown_value: :dashboard,
       ]
 
-    use_effect [assigns: [dropdown_value: :any]], [
-      run: [:on_dropdown_value_change],
-    ]
+    use_effect :dropdown_value, :on_dropdown_value_change
 
     def setup(scene) do
       Scenic.PubSub.subscribe(:pubsub_service)
@@ -271,22 +266,18 @@ defmodule SnapFramework.Scene do
                       mounted: 1
 
   @opts_schema [
-    name: [required: false, type: :atom],
     template: [required: true, type: :string],
     controller: [required: true, type: :any],
     assigns: [required: true, type: :any],
-    opts: [required: false, type: :any],
-    type: [required: false, type: :atom]
+    opts: [required: false, type: :any, default: []],
+    type: [required: false, type: :atom, default: :scene]
   ]
-
-  alias Scenic.Scene
-  require Logger
 
   defmacro __before_compile__(env) do
     caller = __CALLER__
     template = Module.get_attribute(env.module, :template)
     file = File.read!(template)
-    Module.put_attribute(env.module, :file, file)
+    Module.put_attribute(env.module, :tmp_file, file)
 
     quote do
       def init(scene, data, opts) do
@@ -302,17 +293,13 @@ defmodule SnapFramework.Scene do
           scene
           |> assign(assigns)
           |> setup()
-          |> compile()
+          |> compile(unquote(file))
           |> mounted()
 
         {:ok, scene}
       end
 
-      def compile(scene) do
-        compile(scene, unquote(file))
-      end
-
-      unquote(effect_defs())
+      unquote(scene_handlers())
     end
   end
 
@@ -341,8 +328,8 @@ defmodule SnapFramework.Scene do
       )
 
     graph =
-      file
-      |> SnapFramework.Engine.compile_string(
+      SnapFramework.Engine.compile_string(
+        file,
         [assigns: scene.assigns],
         info,
         __ENV__
@@ -350,12 +337,44 @@ defmodule SnapFramework.Scene do
       |> SnapFramework.Engine.Builder.build_graph()
 
     scene
-    |> Scene.assign(graph: graph)
-    |> Scene.push_graph(graph)
+    |> Scenic.Scene.assign(graph: graph)
+    |> Scenic.Scene.push_graph(graph)
   end
 
-  defmacro use_effect([assigns: ks], actions) do
+  defmacro use_effect([assigns: ks], [run: list] = actions) when is_list(list) do
     register_effects(ks, actions)
+  end
+
+  defmacro use_effect([assigns: ks], action) when is_list(ks) and is_atom(action) do
+    register_effects(ks, [run: [action]])
+  end
+
+  defmacro use_effect([assigns: ks], actions) when is_list(ks) and is_list(actions) do
+    register_effects(ks, [run: actions])
+  end
+
+  defmacro use_effect(ks, [run: list] = actions) when is_list(ks) and is_list(list) do
+    register_effects(ks, actions)
+  end
+
+  defmacro use_effect(ks, action) when is_list(ks) and is_atom(action) do
+    register_effects(ks, [run: [action]])
+  end
+
+  defmacro use_effect(ks, actions) when is_list(ks) and is_list(actions) do
+    register_effects(ks, [run: actions])
+  end
+
+  defmacro use_effect(k, [run: list] = actions) when is_atom(k) and is_list(list) do
+    register_effects(Keyword.put_new([], k, :any), actions)
+  end
+
+  defmacro use_effect(k, action) when is_atom(k) and is_atom(action) do
+    register_effects(Keyword.put_new([], k, :any), [run: [action]])
+  end
+
+  defmacro use_effect(k, actions) when is_atom(k) and is_list(actions) do
+    register_effects(Keyword.put_new([], k, :any), [run: actions])
   end
 
   defmacro use_effect(ks, actions) do
@@ -395,24 +414,20 @@ defmodule SnapFramework.Scene do
 
   defp deps() do
     quote do
-      import Scenic.Scene
-      require EEx
-      require Logger
       import SnapFramework.Scene
     end
   end
 
   defp defs(opts) do
     quote do
+      require Logger
       @name unquote(opts[:name])
       @template unquote(opts[:template])
+      Logger.debug(inspect Module.get_attribute(__MODULE__, :tmp_file))
+      @tmp_file Module.get_attribute(__MODULE__, :tmp_file)
       @controller unquote(opts[:controller])
       @external_resource @template
       @assigns unquote(opts[:assigns])
-
-      @using_effects false
-      Module.register_attribute(__MODULE__, :effects_registry, [])
-      Module.register_attribute(__MODULE__, :watch_registry, [])
       @effects_registry %{}
       @watch_registry []
       @before_compile SnapFramework.Scene
@@ -441,57 +456,49 @@ defmodule SnapFramework.Scene do
                     process_event: 3,
                     setup: 1,
                     mounted: 1
+    end
+  end
 
+  defp scene_handlers() do
+    quote do
       def handle_input(input, id, scene) do
         {response_type, new_scene} = scene.module.process_input(input, id, scene)
-        {response_type, do_process(scene, new_scene)}
+        {response_type, SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller)}
       end
 
       def handle_info(msg, scene) do
         {response_type, new_scene} = scene.module.process_info(msg, scene)
-        {response_type, scene.module.do_process(scene, new_scene)}
+        {response_type, SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller)}
       end
 
       def handle_cast(msg, scene) do
         {response_type, new_scene} = scene.module.process_cast(msg, scene)
-        {response_type, scene.module.do_process(scene, new_scene)}
+        {response_type, SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller)}
       end
 
       def handle_call(msg, from, scene) do
         {response_type, res, new_scene} = scene.module.process_call(msg, from, scene)
-        {response_type, res, scene.module.do_process(scene, new_scene)}
+        {response_type, res, SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller)}
       end
 
       def handle_update(msg, opts, scene) do
         {response_type, new_scene} = scene.module.process_update(msg, opts, scene)
-        {response_type, scene.module.do_process(scene, new_scene)}
+        {response_type, SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller)}
       end
 
       def handle_event(event, from_pid, scene) do
         case scene.module.process_event(event, from_pid, scene) do
-          {:noreply, new_scene} ->
-            {:noreply, scene.module.do_process(scene, new_scene)}
-
-          {:noreply, new_scene, opts} ->
-            {:noreply, scene.module.do_process(scene, new_scene), opts}
-
-          {:halt, new_scene} ->
-            {:halt, scene.module.do_process(scene, new_scene)}
-
-          {:halt, new_scene, opts} ->
-            {:halt, scene.module.do_process(scene, new_scene), opts}
-
           {:cont, event, new_scene} ->
-            {:cont, event, scene.module.do_process(scene, new_scene)}
+            {:cont, event, SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller)}
 
           {:cont, event, new_scene, opts} ->
-            {:cont, event, scene.module.do_process(scene, new_scene), opts}
+            {:cont, event, SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller), opts}
 
           {res, new_scene} ->
-            {res, scene.module.do_process(scene, new_scene)}
+            {res, SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller)}
 
           {res, new_scene, opts} ->
-            {res, scene.module.do_process(scene, new_scene), opts}
+            {res, SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller), opts}
 
           response ->
             response
@@ -500,66 +507,10 @@ defmodule SnapFramework.Scene do
     end
   end
 
-  defp effect_defs() do
-    quote do
-      def do_process(old_scene, new_scene) do
-        # unquote(do_process(old_scene, new_scene, Module.get_attribute(__MODULE__, :watch_registry), Module.get_attribute(__MODULE__, :effects_registry), Module.get_attribute(__MODULE__, :controller), Module.get_attribute(__MODULE__, :file)))
-        diff = diff_state(old_scene.assigns, new_scene.assigns)
-        new_scene = process_effects(new_scene, diff)
-
-        if old_scene.assigns.graph != new_scene.assigns.graph do
-          Scene.push_graph(new_scene, new_scene.assigns.graph)
-        else
-          new_scene
-        end
-      end
-
-      def diff_state(old_state, new_state) do
-        MapDiff.diff(old_state, new_state)
-      end
-
-      def process_effects(scene, %{changed: :equal}) do
-        scene
-      end
-
-      def process_effects(scene, %{changed: :map_change, added: added} = changes) do
-        Enum.reduce(added, scene, fn {key, value}, acc ->
-          if Enum.member?(@watch_registry, key) do
-            scene = compile(scene)
-          else
-            acc |> change(key, value)
-          end
-        end)
-      end
-
-      def change(scene, key, value) do
-        effect =
-          Map.get(@effects_registry, {key, value}) || Map.get(@effects_registry, {key, :any})
-
-        if effect do
-          run_effect(effect, scene)
-        else
-          scene
-        end
-      end
-
-      def run_effect(effect, scene) do
-        Enum.reduce(effect, scene, fn {e_key, list}, acc ->
-          case e_key do
-            :run -> Enum.reduce(list, acc, fn item, s_acc -> run(s_acc, item) end)
-            _ -> acc
-          end
-        end)
-      end
-
-      def run(scene, func) do
-        apply(@controller, func, [scene])
-      end
-    end
-  end
-
   defp register_effects(ks, actions) do
     quote bind_quoted: [ks: ks, actions: actions] do
+      require Logger
+      Logger.debug(inspect @effects_registry)
       @effects_registry Enum.reduce(ks, @effects_registry, fn
         kv, acc ->
           if Map.has_key?(acc, kv) do

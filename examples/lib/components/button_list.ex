@@ -8,6 +8,4 @@ defmodule Examples.Component.ButtonList do
     controller: Examples.Component.ButtonListController,
     assigns: [slot: nil, slot_cmp: nil],
     opts: []
-
-  # defcomponent(:button_list, :any)
 end
