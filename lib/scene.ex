@@ -1,5 +1,6 @@
 defmodule SnapFramework.Scene do
   require Logger
+
   @moduledoc ~S"""
   ## Overview
 
@@ -269,7 +270,7 @@ defmodule SnapFramework.Scene do
                       mounted: 1
 
   @opts_schema [
-    template: [required: true, type: :string],
+    template: [required: false, type: :any, default: :none],
     controller: [required: true, type: :any],
     assigns: [required: true, type: :any],
     opts: [required: false, type: :any, default: []],
@@ -281,11 +282,11 @@ defmodule SnapFramework.Scene do
   end
 
   defmacro use_effect([assigns: ks], action) when is_list(ks) and is_atom(action) do
-    register_effects(ks, [run: [action]])
+    register_effects(ks, run: [action])
   end
 
   defmacro use_effect([assigns: ks], actions) when is_list(ks) and is_list(actions) do
-    register_effects(ks, [run: actions])
+    register_effects(ks, run: actions)
   end
 
   defmacro use_effect(ks, [run: list] = actions) when is_list(ks) and is_list(list) do
@@ -293,11 +294,11 @@ defmodule SnapFramework.Scene do
   end
 
   defmacro use_effect(ks, action) when is_list(ks) and is_atom(action) do
-    register_effects(ks, [run: [action]])
+    register_effects(ks, run: [action])
   end
 
   defmacro use_effect(ks, actions) when is_list(ks) and is_list(actions) do
-    register_effects(ks, [run: actions])
+    register_effects(ks, run: actions)
   end
 
   defmacro use_effect(k, [run: list] = actions) when is_atom(k) and is_list(list) do
@@ -305,11 +306,11 @@ defmodule SnapFramework.Scene do
   end
 
   defmacro use_effect(k, action) when is_atom(k) and is_atom(action) do
-    register_effects(Keyword.put_new([], k, :any), [run: [action]])
+    register_effects(Keyword.put_new([], k, :any), run: [action])
   end
 
   defmacro use_effect(k, actions) when is_atom(k) and is_list(actions) do
-    register_effects(Keyword.put_new([], k, :any), [run: actions])
+    register_effects(Keyword.put_new([], k, :any), run: actions)
   end
 
   defmacro use_effect(ks, actions) do
@@ -336,6 +337,8 @@ defmodule SnapFramework.Scene do
     caller = __CALLER__
     template = Module.get_attribute(env.module, :template)
     file = File.read!(template)
+    Module.put_attribute(env.module, :caller_file, caller.file)
+    Module.put_attribute(env.module, :caller_line, caller.line)
     Module.put_attribute(env.module, :tmp_file, file)
 
     quote do
@@ -352,14 +355,23 @@ defmodule SnapFramework.Scene do
           scene
           |> assign(assigns)
           |> setup()
-          |> compile(unquote(file))
+          |> compile(unquote(caller.file), unquote(caller.line), unquote(file))
           |> mounted()
 
         {:ok, scene}
       end
 
       defp do_process(scene, new_scene) do
-        SnapFramework.UseEffect.do_process(scene, new_scene, @tmp_file, @watch_registry, @effects_registry, @controller)
+        SnapFramework.UseEffect.do_process(
+          scene,
+          new_scene,
+          @caller_file,
+          @caller_line,
+          @tmp_file,
+          @watch_registry,
+          @effects_registry,
+          @controller
+        )
       end
     end
   end
@@ -373,15 +385,17 @@ defmodule SnapFramework.Scene do
           unquote(defs(opts))
         end
 
-        {:error, error} ->
-          raise Exception.message(error)
+      {:error, error} ->
+        raise Exception.message(error)
     end
   end
 
-  def compile(scene, file) do
+  def compile(scene, c_file, c_line, file) do
     info =
       Keyword.merge(
         [assigns: scene.assigns, engine: SnapFramework.Engine],
+        file: c_file,
+        line: c_line,
         trim: true
       )
 
@@ -406,6 +420,7 @@ defmodule SnapFramework.Scene do
           @behaviour SnapFramework.Scene
           use Scenic.Component, unquote(opts[:opts])
         end
+
       _ ->
         quote do
           @behaviour SnapFramework.Scene
@@ -425,6 +440,7 @@ defmodule SnapFramework.Scene do
       @name unquote(opts[:name])
       @template unquote(opts[:template])
       @tmp_file Module.get_attribute(__MODULE__, :tmp_file)
+      @caller Module.get_attribute(__MODULE__, :caller)
       @controller unquote(opts[:controller])
       @external_resource @template
       @assigns unquote(opts[:assigns])
@@ -440,27 +456,30 @@ defmodule SnapFramework.Scene do
       def process_cast(_msg, scene), do: {:noreply, scene}
       def process_input(_input, _id, scene), do: {:noreply, scene}
       def process_event(event, _from_pid, scene), do: {:cont, event, scene}
-      def process_put({k, v}, scene), do: {:noreply, assign(scene, Keyword.put_new(Keyword.new(), k, v))}
+
+      def process_put({k, v}, scene),
+        do: {:noreply, assign(scene, Keyword.put_new(Keyword.new(), k, v))}
+
       def process_get(_, scene), do: {:reply, scene, scene}
       def process_fetch(_, scene), do: {:reply, scene, scene}
+
       def process_update(data, opts, scene) do
-        {:noreply,
-          assign(scene, data: data, opts: Keyword.merge(scene.assigns.opts, opts))}
+        {:noreply, assign(scene, data: data, opts: Keyword.merge(scene.assigns.opts, opts))}
       end
 
       unquote(scene_handlers())
 
-      defoverridable  setup: 1,
-                      mounted: 1,
-                      process_call: 3,
-                      process_info: 2,
-                      process_cast: 2,
-                      process_input: 3,
-                      process_put: 2,
-                      process_get: 2,
-                      process_fetch: 2,
-                      process_update: 3,
-                      process_event: 3
+      defoverridable setup: 1,
+                     mounted: 1,
+                     process_call: 3,
+                     process_info: 2,
+                     process_cast: 2,
+                     process_input: 3,
+                     process_put: 2,
+                     process_get: 2,
+                     process_fetch: 2,
+                     process_update: 3,
+                     process_event: 3
     end
   end
 
@@ -515,25 +534,25 @@ defmodule SnapFramework.Scene do
   defp register_effects(ks, actions) do
     quote bind_quoted: [ks: ks, actions: actions] do
       @effects_registry Enum.reduce(ks, @effects_registry, fn
-        kv, acc ->
-          if Map.has_key?(acc, kv) do
-            actions =
-              Enum.reduce(actions, %{}, fn {a_key, a_list}, _a_acc ->
-                if Map.has_key?(acc[kv], a_key) do
-                  Map.put(acc[kv], a_key, [acc[kv][a_key] | a_list])
-                else
-                  Map.put_new(acc[kv], a_key, a_list)
-                end
-              end)
-          else
-            actions =
-              Enum.reduce(actions, %{}, fn {a_key, a_list}, a_acc ->
-                Map.put_new(a_acc, a_key, a_list)
-              end)
+                          kv, acc ->
+                            if Map.has_key?(acc, kv) do
+                              actions =
+                                Enum.reduce(actions, %{}, fn {a_key, a_list}, _a_acc ->
+                                  if Map.has_key?(acc[kv], a_key) do
+                                    Map.put(acc[kv], a_key, [acc[kv][a_key] | a_list])
+                                  else
+                                    Map.put_new(acc[kv], a_key, a_list)
+                                  end
+                                end)
+                            else
+                              actions =
+                                Enum.reduce(actions, %{}, fn {a_key, a_list}, a_acc ->
+                                  Map.put_new(a_acc, a_key, a_list)
+                                end)
 
-            Map.put_new(acc, kv, actions)
-          end
-      end)
+                              Map.put_new(acc, kv, actions)
+                            end
+                        end)
     end
   end
 end

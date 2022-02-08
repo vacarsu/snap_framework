@@ -118,6 +118,7 @@ defmodule SnapFramework.Component do
   defp defcmp(opts) do
     name = opts[:name]
     data_type = opts[:type]
+
     quote do
       case unquote(data_type) do
         :string ->
@@ -143,9 +144,12 @@ defmodule SnapFramework.Component do
 
         nil ->
           def validate(data) when is_nil(data), do: {:ok, data}
+
+        _ ->
+          nil
       end
 
-      if unquote(data_type) != :any do
+      if unquote(data_type) != :any and unquote(data_type) != :custom do
         def validate(data) do
           {
             :error,
@@ -153,13 +157,14 @@ defmodule SnapFramework.Component do
             #{IO.ANSI.red()}Invalid #{__MODULE__} specification
             Received: #{inspect(data)}
             #{IO.ANSI.yellow()}
-            The data for  #{__MODULE__} is just the #{inspect(unquote(data_type))} to be displayed in the component.#{IO.ANSI.default_color()}
+            The data for  #{__MODULE__} must be a #{inspect(unquote(data_type))}.#{IO.ANSI.default_color()}
             """
           }
         end
       end
 
       def unquote(name)(graph, data, options \\ [])
+
       def unquote(name)(%Graph{} = g, data, options) do
         add_to_graph(g, data, options)
       end

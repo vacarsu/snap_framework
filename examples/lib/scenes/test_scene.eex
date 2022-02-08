@@ -1,6 +1,6 @@
 <%= graph font_size: 20 %>
 
-<%= grid item_width: 80, item_height: 50, translate: {5, 100} do %>
+<%= grid item_width: 200, item_height: 100, translate: {5, 100} do %>
     <%= row do %>
        <%= text "Hi" %>
        <%= text "Hi" %>
@@ -14,3 +14,11 @@
     <% end %>
 <% end %>
 
+
+
+<%= grid item_width: 200, item_height: 100, translate: {5, 200} do %>
+    <%= row do %>
+       <%= component Scenic.Component.Input.Dropdown, {@dropdown_opts, @dropdown_value}, id: :dropdown %>
+       <%= component Scenic.Component.Input.Dropdown, {@dropdown_opts, @dropdown_value}, id: :dropdown_2 %>
+    <% end %>
+<% end %>
