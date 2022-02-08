@@ -153,8 +153,6 @@ defmodule SnapFramework.Engine do
     |> Macro.prewalk(&SnapFramework.Parser.Graph.run/1)
     |> Macro.prewalk(&SnapFramework.Parser.Component.run/1)
     |> Macro.prewalk(&SnapFramework.Parser.Primitive.run/1)
-
-    # |> Macro.prewalk(&SnapFramework.Parser.Outlet.run(&1, assigns))
   end
 
   @doc false

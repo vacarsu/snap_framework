@@ -2,15 +2,15 @@
 
 <%= grid item_width: 80, item_height: 50, translate: {5, 100} do %>
     <%= row do %>
-       <%= text  "Hi" %>
-       <%= text  "Hi" %>
-       <%= text  "Hi" %>
-       <%= text  "Hi" %>
+       <%= text "Hi" %>
+       <%= text "Hi" %>
+       <%= text "Hi" %>
+       <%= text "Hi" %>
     <% end %>
 
     <%= col do %>
-        <%= text  "Hi" %>
-        <%= text  "Hi" %>
+        <%= text "Hi" %>
+        <%= text "Hi" %>
     <% end %>
 <% end %>
 

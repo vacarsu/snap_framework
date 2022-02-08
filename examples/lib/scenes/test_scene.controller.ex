@@ -8,6 +8,7 @@ defmodule Examples.Scene.TestSceneController do
 
   def on_text_change(scene) do
     Logger.debug("changed")
+
     graph =
       scene.assigns.graph
       |> Graph.modify(:dropdown_value_text, &text(&1, scene.assigns.text_value, []))
@@ -18,6 +19,7 @@ defmodule Examples.Scene.TestSceneController do
 
   def on_dropdown_value_change(scene) do
     Logger.debug("changed")
+
     graph =
       scene.assigns.graph
       |> Graph.modify(:test_btn, &button(&1, scene.assigns.button_text, []))

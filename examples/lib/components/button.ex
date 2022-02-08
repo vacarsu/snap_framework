@@ -1,6 +1,4 @@
 defmodule Examples.Component.Button do
-  import Scenic.Primitives, only: [text: 3, rounded_rectangle: 3]
-
   use SnapFramework.Component,
     name: :button,
     type: :string,
@@ -16,12 +14,12 @@ defmodule Examples.Component.Button do
   end
 
   @impl true
-  def bounds(data, opts) do
+  def bounds(_data, _opts) do
     {0, 0, 100, 50}
   end
 
   @impl true
-  def process_input({:cursor_button, {0, :release, _, _}}, id, scene) do
+  def process_input({:cursor_button, {0, :release, _, _}}, _, scene) do
     send_parent_event(scene, {:click, scene.assigns.opts[:id]})
     {:noreply, scene}
   end

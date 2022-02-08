@@ -1,10 +1,4 @@
 defmodule Examples.Scene.TestScene do
-  import Scenic.Components, only: [dropdown: 3]
-  import Scenic.Primitives, only: [text: 3]
-  import Examples.Component.Button, only: [button: 3]
-  import Examples.Component.ButtonList, only: [button_list: 3]
-  alias Scenic.Component.Input.Dropdown
-  alias Scenic.Primitive.Text
   require Logger
 
   use SnapFramework.Scene,
@@ -24,8 +18,6 @@ defmodule Examples.Scene.TestScene do
       buttons: ["test", "test_1", "test_2"]
     ]
 
-  # watch [:dropdown_value]
-
   # use_effect([assigns: [text_value: :any, button_text: :any]],
   #   run: [:on_text_change]
   # )
@@ -38,21 +30,16 @@ defmodule Examples.Scene.TestScene do
 
   @impl true
   def mounted(scene) do
-    Logger.debug("callback mounted called")
-    Logger.debug(inspect(scene.assigns.graph))
     scene
   end
 
   @impl true
   def process_event({:value_changed, :dropdown, value}, _, scene) do
-    # {:ok, [btn_pid]} = child(scene, :test_btn)
-    # Scenic.Component.put(btn_pid, "selected value #{value}")
     {:noreply,
      assign(scene, dropdown_value: value, button_text: "hi", text_value: "selected value #{value}")}
   end
 
   def process_event(_, _, scene) do
-    Logger.debug("working")
     {:noreply, scene}
   end
 end

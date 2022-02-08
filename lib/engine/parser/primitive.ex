@@ -162,7 +162,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:line, meta,  data, [data, opts]}) do
+  def parse({:line, meta, data, [data, opts]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -173,7 +173,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:line, meta,  [data]}) do
+  def parse({:line, meta, [data]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,

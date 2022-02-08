@@ -216,7 +216,7 @@ defmodule SnapFramework.Scene do
   Use this to return data to the caller.
   The returned state is diffed, and effects are run.
   """
-  @callback process_get(GenServer.from(), Scene.t()) :: {atom, Scene.t()}
+  @callback process_get(GenServer.from(), Scene.t()) :: {atom, term, Scene.t()}
 
   @doc """
   Called when a scene receives a put message.
@@ -230,7 +230,7 @@ defmodule SnapFramework.Scene do
   Use this to return data to the caller.
   The returned state is diffed, and effects are run.
   """
-  @callback process_fetch(GenServer.from(), Scene.t()) :: {atom, Scene.t()}
+  @callback process_fetch(GenServer.from(), Scene.t()) :: {atom, term, Scene.t()}
 
   @doc """
   Called when a scene receives an event message.

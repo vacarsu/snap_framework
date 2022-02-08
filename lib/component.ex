@@ -92,7 +92,6 @@ defmodule SnapFramework.Component do
 
   defp prelude(opts) do
     quote do
-      @behaviour SnapFramework.Component
       use SnapFramework.Scene,
         template: unquote(opts[:template]),
         controller: unquote(opts[:controller]),
