@@ -34,7 +34,7 @@ defmodule SnapFramework.UseEffect do
     MapDiff.diff(old_state, new_state)
   end
 
-  def process_effects(scene, %{changed: :equal}, _, _, _, _, _) do
+  def process_effects(scene, %{changed: :equal}, _, _, _, _, _, _) do
     scene
   end
 

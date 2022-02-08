@@ -2,7 +2,7 @@
 
 <%= grid item_width: 200, item_height: 100, translate: {5, 100} do %>
     <%= row do %>
-       <%= text "Hi" %>
+       <%= component Examples.Component.Button, "Hi" %>
        <%= text "Hi" %>
        <%= text "Hi" %>
        <%= text "Hi" %>
