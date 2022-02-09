@@ -157,7 +157,7 @@ defmodule SnapFramework.Component do
             #{IO.ANSI.red()}Invalid #{__MODULE__} specification
             Received: #{inspect(data)}
             #{IO.ANSI.yellow()}
-            The data for  #{__MODULE__} must be a #{inspect(unquote(data_type))}.#{IO.ANSI.default_color()}
+            The data for #{__MODULE__} must be a #{inspect(unquote(data_type))}.#{IO.ANSI.default_color()}
             """
           }
         end

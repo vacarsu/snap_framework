@@ -390,12 +390,12 @@ defmodule SnapFramework.Scene do
     end
   end
 
-  def compile(scene, c_file, c_line, file) do
+  def compile(scene, caller_file, caller_line, file) do
     info =
       Keyword.merge(
         [assigns: scene.assigns, engine: SnapFramework.Engine],
-        file: c_file,
-        line: c_line,
+        file: caller_file,
+        line: caller_line,
         trim: true
       )
 

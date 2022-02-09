@@ -4,9 +4,27 @@ defmodule SnapFramework.Engine.Builder.Layout do
 
   This module is responsible for taking the parsed EEx layout and builds the graph.
   """
+  alias __MODULE__
 
-  def build_layout(%Scenic.Graph{} = graph, children, padding, width, height, translate) do
-    layout = %{
+  defstruct last_x: 0,
+            last_y: 0,
+            padding: 0,
+            width: nil,
+            height: nil,
+            largest_width: 0,
+            largest_height: 0,
+            graph: nil,
+            translate: {0, 0}
+
+  def build(graph,
+        type: :layout,
+        children: children,
+        padding: padding,
+        width: width,
+        height: height,
+        translate: translate
+      ) do
+    layout = %Layout{
       last_x: 0,
       last_y: 0,
       padding: padding,
@@ -18,101 +36,67 @@ defmodule SnapFramework.Engine.Builder.Layout do
       translate: translate
     }
 
-    Enum.reduce(children, layout, fn child, layout ->
-      case child do
-        [type: :component, module: module, data: data, opts: opts] ->
-          children = if opts[:do], do: opts[:do], else: nil
-          translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
-
-        [type: :component, module: module, data: data, opts: opts, children: children] ->
-          translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
-
-        [type: :primitive, module: _module, data: _data, opts: _opts] ->
-          layout
-
-        [
-          type: :layout,
-          children: children,
-          padding: padding,
-          width: width,
-          height: height,
-          translate: translate
-        ] ->
-          {x, y} = translate
-          {prev_x, prev_y} = layout.translate
-          nested_layout = %{
-            layout |
-            # | last_x: x + prev_x + layout.padding,
-            #   last_y: layout.last_y + y + layout.largest_height + layout.padding,
-              padding: padding,
-              width: width,
-              height: height,
-              translate: {x + prev_x, y + prev_y}
-          }
-
-          graph = build_layout(nested_layout, children).graph
-          %{layout | graph: graph}
-
-        "\n" ->
-          layout
-
-        list ->
-          if is_list(list) do
-            build_layout(layout, list)
-          else
-            layout
-          end
-      end
-    end)
+    do_build(layout, children).graph
   end
 
-  defp build_layout(layout, children) do
-    Enum.reduce(children, layout, fn child, layout ->
-      case child do
-        [type: :component, module: module, data: data, opts: opts] ->
-          children = if opts[:do], do: opts[:do], else: nil
-          translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
+  def build(graph, _), do: graph
 
-        [type: :component, module: module, data: data, opts: opts, children: children] ->
-          translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
-
-        [type: :primitive, module: _module, data: _data, opts: _opts] ->
-          layout
-
-        [
-          type: :layout,
-          children: children,
-          padding: padding,
-          width: width,
-          height: height,
-          translate: translate
-        ] ->
-          {x, y} = translate
-          {prev_x, prev_y} = layout.translate
-          nested_layout = %{
-            layout |
-            # | last_x: x + prev_x + layout.padding,
-            #   last_y: layout.last_y + y + layout.largest_height + layout.padding,
-              padding: padding,
-              width: width,
-              height: height,
-              translate: {x + prev_x, y + prev_y}
-          }
-
-          build_layout(nested_layout, children)
-
-        "\n" ->
-          layout
-
-        list ->
-          if is_list(list) do
-            build_layout(layout, list)
-          else
-            layout
-          end
-      end
-    end)
+  defp do_build(layout, children) do
+    Enum.reduce(children, layout, &render_layout/2)
   end
+
+  defp render_layout(
+         [
+           type: type,
+           children: children,
+           padding: padding,
+           width: width,
+           height: height,
+           translate: translate
+         ],
+         layout
+       )
+       when type == :layout do
+    {x, y} = translate
+    {prev_x, prev_y} = layout.translate
+
+    nested_layout = %Layout{
+      layout
+      | padding: padding,
+        width: width,
+        height: height,
+        translate: {x + prev_x, y + prev_y}
+    }
+
+    graph = do_build(nested_layout, children).graph
+    %{layout | graph: graph}
+  end
+
+  defp render_layout(child, layout) do
+    render_child(child, layout)
+  end
+
+  defp render_child(
+         [type: :component, module: module, data: data, opts: opts, children: children],
+         layout
+       ) do
+    translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
+  end
+
+  defp render_child([type: :component, module: module, data: data, opts: opts], layout) do
+    children = if opts[:do], do: opts[:do], else: nil
+    translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
+  end
+
+  defp render_child([type: :primitive, module: _module, data: _data, opts: _opts], layout) do
+    layout
+  end
+
+  defp render_child(list, layout) when is_list(list) do
+    do_build(layout, list)
+  end
+
+  defp render_child(_, layout), do: layout
 
   defp translate_and_render(layout, module, data, opts) do
     {l, t, r, b} = get_bounds(module, data, opts)
