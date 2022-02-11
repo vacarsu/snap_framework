@@ -5,13 +5,17 @@ defmodule SnapFramework.Engine.Builder do
   This module is responsible for taking the parsed EEx template and building the graph.
   """
 
+  require Logger
   alias __MODULE__
 
   def build_graph(list, acc \\ %{}) do
+    Logger.debug(inspect(list))
     Enum.reduce(list, acc, &render_graph/2)
   end
 
   defp render_graph(child, graph) do
+    Logger.debug(inspect(child))
+
     graph
     |> Builder.Graph.build(child)
     |> Builder.Grid.build(child)

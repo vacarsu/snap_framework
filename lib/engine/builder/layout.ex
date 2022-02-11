@@ -4,6 +4,8 @@ defmodule SnapFramework.Engine.Builder.Layout do
 
   This module is responsible for taking the parsed EEx layout and builds the graph.
   """
+
+  require Logger
   alias __MODULE__
 
   defstruct last_x: 0,
@@ -18,11 +20,11 @@ defmodule SnapFramework.Engine.Builder.Layout do
 
   def build(graph,
         type: :layout,
-        children: children,
         padding: padding,
         width: width,
         height: height,
-        translate: translate
+        translate: translate,
+        children: children
       ) do
     layout = %Layout{
       last_x: 0,
@@ -42,6 +44,8 @@ defmodule SnapFramework.Engine.Builder.Layout do
   def build(graph, _), do: graph
 
   defp do_build(layout, children) do
+    Logger.debug(inspect(layout))
+    Logger.debug(inspect(children))
     Enum.reduce(children, layout, &render_layout/2)
   end
 
@@ -56,32 +60,29 @@ defmodule SnapFramework.Engine.Builder.Layout do
     translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
   end
 
-  defp render_child([type: :component, module: module, data: data, opts: opts], layout) do
-    children = if opts[:do], do: opts[:do], else: nil
-    translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
-  end
-
   defp render_child(
          [
            type: :layout,
-           children: children,
            padding: padding,
            width: width,
            height: height,
-           translate: translate
+           translate: translate,
+           children: children
          ],
          layout
        ) do
-    {x, y} = translate
-    {prev_x, prev_y} = layout.translate
+    {l_x, l_y} = layout.translate
+    {x, _y} = translate
+    {_prev_x, prev_y} = layout.translate
 
     nested_layout = %Layout{
       layout
       | padding: padding,
         width: width,
-        height: height,
-        translate: {x + prev_x, y + prev_y}
+        height: height
     }
+
+    Logger.debug("nested_layout: #{inspect(nested_layout)}")
 
     graph = do_build(nested_layout, children).graph
     %Layout{layout | graph: graph}
@@ -92,6 +93,8 @@ defmodule SnapFramework.Engine.Builder.Layout do
   defp translate_and_render(layout, module, data, opts) do
     {l, t, r, b} = get_bounds(module, data, opts)
     {tx, ty} = layout.translate
+
+    Logger.debug("rendering button")
 
     layout =
       case fits_in_x?(r + layout.last_x + layout.padding, layout.width) do

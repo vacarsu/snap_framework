@@ -17,12 +17,12 @@ defmodule SnapFramework.Engine.Builder.Grid do
   def build(
         graph,
         type: :grid,
-        children: children,
         item_width: item_width,
         item_height: item_height,
         rows: rows,
         cols: cols,
-        translate: {x, y}
+        translate: {x, y},
+        children: children
       ) do
     grid = %Grid{
       start_x: x,
@@ -37,6 +37,8 @@ defmodule SnapFramework.Engine.Builder.Grid do
       curr_col: 1,
       graph: graph
     }
+
+    Logger.debug(inspect(grid))
 
     do_build(grid, children).graph
   end
