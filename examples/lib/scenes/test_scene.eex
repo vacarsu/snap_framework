@@ -2,10 +2,10 @@
 
 <%= grid item_width: 50, item_height: 50, rows: 3, cols: 20, translate: {5, 100} do %>
     <%= row do %>
-       <%= text "Hi" %>
-       <%= text "Hi" %>
-       <%= text "Hi" %>
-       <%= text "Hi" %>
+        <%= text "Hi" %>
+        <%= text "Hi" %>
+        <%= text "Hi" %>
+        <%= text "Hi" %>
     <% end %>
 
     <%= row do %>
@@ -23,20 +23,10 @@
     <% end %>
 <% end %>
 
-<%= layout width: 800, height: 800, translate: {5, 300} do %>
-    <%= component Scenic.Component.Button, 
-        "button"
-    %>
-
-    <%= component Scenic.Component.Button, 
-        "button"
-    %>
-
-    <%= component Scenic.Component.Button, 
-        "button"
-    %>
-
-    <%= component Scenic.Component.Button, 
-        "button"
-    %>
+<%= component Examples.Component.ButtonList, nil, [] do %>
+    <%= layout width: 800, height: 800, translate: {5, 300} do %>
+        <%= component Scenic.Component.Button, "Hi" %>
+        <%= component Scenic.Component.Button, "Hi" %>
+        <%= component Scenic.Component.Button, "Hi" %>
+    <% end %>
 <% end %>

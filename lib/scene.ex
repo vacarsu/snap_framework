@@ -400,13 +400,16 @@ defmodule SnapFramework.Scene do
       )
 
     graph =
-      SnapFramework.Engine.compile_string(
+      SnapFramework.Engine.Compiler.compile_string(
         file,
         [assigns: scene.assigns],
         info,
         __ENV__
       )
-      |> SnapFramework.Engine.Builder.build_graph()
+
+    # IO.inspect(graph)
+
+    # |> SnapFramework.Engine.Builder.build_graph()
 
     scene
     |> Scenic.Scene.assign(graph: graph)

@@ -1,6 +1,5 @@
 defmodule SnapFramework.Engine.Builder.Grid do
   require Logger
-  alias SnapFramework.Engine.Builder
   alias __MODULE__
 
   defstruct start_x: 0,
@@ -15,7 +14,8 @@ defmodule SnapFramework.Engine.Builder.Grid do
             curr_col: 1,
             graph: nil
 
-  def build(graph,
+  def build(
+        graph,
         type: :grid,
         children: children,
         item_width: item_width,
@@ -66,6 +66,8 @@ defmodule SnapFramework.Engine.Builder.Grid do
         next_y: grid.start_y
     }
   end
+
+  defp render_grid(_, grid), do: grid
 
   defp render_row([type: type, module: module, data: data, opts: opts], grid)
        when type == :component or type == :primitive do
@@ -204,13 +206,7 @@ defmodule SnapFramework.Engine.Builder.Grid do
          _data,
          _opts
        ) do
-    Logger.warn("""
-    #{IO.ANSI.red()}Grid overflowed
-    #{IO.ANSI.yellow()}
-    Could not fit module #{inspect(module)} in grid.
-    Try adjusting your max :rows, and max :cols settings.
-    """)
-
+    overflow_error(module)
     grid
   end
 
@@ -337,13 +333,16 @@ defmodule SnapFramework.Engine.Builder.Grid do
          _data,
          _opts
        ) do
+    overflow_error(module)
+    grid
+  end
+
+  defp overflow_error(module) do
     Logger.warn("""
     #{IO.ANSI.red()}Grid overflowed
     #{IO.ANSI.yellow()}
     Could not fit module #{inspect(module)} in grid.
     Try adjusting your max :rows, and max :cols settings.
     """)
-
-    grid
   end
 end

@@ -4,6 +4,8 @@ defmodule SnapFramework.Parser.Component do
   @moduledoc false
 
   def run(ast) do
+    # Logger.debug(inspect(ast))
+
     ast
     |> parse()
   end
@@ -52,6 +54,22 @@ defmodule SnapFramework.Parser.Component do
         module: unquote(name),
         data: unquote(data),
         opts: unquote(opts),
+        children: unquote(children)
+      ]
+    end
+  end
+
+  def parse({:component, meta, [name, data, [do: {:__block__, [], block}]]}) do
+    children =
+      block
+      |> Enum.reduce([], &build_child_list/2)
+
+    quote line: meta[:line] || 0 do
+      [
+        type: :component,
+        module: unquote(name),
+        data: unquote(data),
+        opts: [],
         children: unquote(children)
       ]
     end

@@ -72,18 +72,6 @@ defmodule SnapFramework.Engine do
   def encode_to_iodata!({:safe, body}), do: body
   def encode_to_iodata!(body) when is_binary(body), do: body
 
-  def compile(path, assigns, info, _env) do
-    quoted = EEx.compile_file(path, info)
-    {result, _binding} = Code.eval_quoted(quoted, assigns)
-    result
-  end
-
-  def compile_string(string, assigns, info, env) do
-    quoted = EEx.compile_string(string, info)
-    {result, _binding} = Code.eval_quoted(quoted, assigns, env)
-    result
-  end
-
   @doc false
   def init(opts) do
     %{

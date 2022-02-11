@@ -45,33 +45,6 @@ defmodule SnapFramework.Engine.Builder.Layout do
     Enum.reduce(children, layout, &render_layout/2)
   end
 
-  defp render_layout(
-         [
-           type: type,
-           children: children,
-           padding: padding,
-           width: width,
-           height: height,
-           translate: translate
-         ],
-         layout
-       )
-       when type == :layout do
-    {x, y} = translate
-    {prev_x, prev_y} = layout.translate
-
-    nested_layout = %Layout{
-      layout
-      | padding: padding,
-        width: width,
-        height: height,
-        translate: {x + prev_x, y + prev_y}
-    }
-
-    graph = do_build(nested_layout, children).graph
-    %{layout | graph: graph}
-  end
-
   defp render_layout(child, layout) do
     render_child(child, layout)
   end
@@ -88,12 +61,30 @@ defmodule SnapFramework.Engine.Builder.Layout do
     translate_and_render(layout, module, data, Keyword.put_new(opts, :children, children))
   end
 
-  defp render_child([type: :primitive, module: _module, data: _data, opts: _opts], layout) do
-    layout
-  end
+  defp render_child(
+         [
+           type: :layout,
+           children: children,
+           padding: padding,
+           width: width,
+           height: height,
+           translate: translate
+         ],
+         layout
+       ) do
+    {x, y} = translate
+    {prev_x, prev_y} = layout.translate
 
-  defp render_child(list, layout) when is_list(list) do
-    do_build(layout, list)
+    nested_layout = %Layout{
+      layout
+      | padding: padding,
+        width: width,
+        height: height,
+        translate: {x + prev_x, y + prev_y}
+    }
+
+    graph = do_build(nested_layout, children).graph
+    %Layout{layout | graph: graph}
   end
 
   defp render_child(_, layout), do: layout
@@ -108,7 +99,7 @@ defmodule SnapFramework.Engine.Builder.Layout do
           x = l + layout.last_x + layout.padding + tx
           y = layout.last_y + ty
 
-          %{
+          %Layout{
             layout
             | last_x: r + layout.last_x + layout.padding,
               graph:
@@ -119,7 +110,7 @@ defmodule SnapFramework.Engine.Builder.Layout do
           x = l + tx + layout.padding
           y = t + layout.last_y + layout.largest_height + layout.padding
 
-          %{
+          %Layout{
             layout
             | last_x: l + tx + r + layout.padding,
               last_y: t + layout.last_y + layout.largest_height + layout.padding,
@@ -128,8 +119,8 @@ defmodule SnapFramework.Engine.Builder.Layout do
           }
       end
 
-    layout = if r > layout.largest_width, do: %{layout | largest_width: r}, else: layout
-    if b > layout.largest_height, do: %{layout | largest_height: b}, else: layout
+    layout = if r > layout.largest_width, do: %Layout{layout | largest_width: r}, else: layout
+    if b > layout.largest_height, do: %Layout{layout | largest_height: b}, else: layout
   end
 
   defp get_bounds(mod, data, opts) do
