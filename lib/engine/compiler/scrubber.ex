@@ -15,13 +15,11 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
     acc
   end
 
-  defp scrub_item(%{type: _type, children: [children]} = child, acc) when is_list(children) do
-    Logger.debug("Scrubber child children: #{inspect(children)}")
-    children = scrub(children, acc)
-    List.insert_at(acc, length(acc), Keyword.merge(child, children: children))
-  end
-
-  defp scrub_item(%{type: _type, children: children} = child, acc) do
+  defp scrub_item(
+         [type: :component, module: _, data: _, opts: _, children: children] = child,
+         acc
+       )
+       when is_list(children) do
     Logger.debug("Scrubber child children: #{inspect(children)}")
     children = scrub(children)
     List.insert_at(acc, length(acc), Keyword.merge(child, children: children))

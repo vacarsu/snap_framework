@@ -16,7 +16,8 @@ defmodule SnapFramework.Parser.Component do
         type: :component,
         module: unquote(name),
         data: unquote(data),
-        opts: unquote(opts)
+        opts: unquote(opts),
+        children: []
       ]
     end
   end
@@ -27,7 +28,8 @@ defmodule SnapFramework.Parser.Component do
         type: :component,
         module: unquote(name),
         data: nil,
-        opts: unquote(opts)
+        opts: unquote(opts),
+        children: []
       ]
     end
   end
@@ -38,7 +40,8 @@ defmodule SnapFramework.Parser.Component do
         type: :component,
         module: unquote(name),
         data: unquote(data),
-        opts: []
+        opts: [],
+        children: []
       ]
     end
   end
