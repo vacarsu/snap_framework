@@ -23,12 +23,12 @@ defmodule SnapFramework.Parser.Grid do
     quote line: meta[:line] || 0 do
       [
         type: :grid,
-        children: unquote(children),
         item_width: unquote(opts[:item_width] || 100),
         item_height: unquote(opts[:item_height] || 100),
         rows: unquote(opts[:rows]),
         cols: unquote(opts[:cols]),
-        translate: unquote(opts[:translate] || {0, 0})
+        translate: unquote(opts[:translate] || {0, 0}),
+        children: unquote(children)
       ]
     end
   end

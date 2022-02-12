@@ -12,11 +12,11 @@ defmodule SnapFramework.Parser.Layout do
     quote line: meta[:line] || 0 do
       [
         type: :layout,
-        children: unquote(children),
         padding: unquote(opts[:padding] || 0),
         width: unquote(opts[:width]),
         height: unquote(opts[:height]),
-        translate: unquote(opts[:translate] || {0, 0})
+        translate: unquote(opts[:translate] || {0, 0}),
+        children: unquote(children)
       ]
     end
   end

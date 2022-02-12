@@ -38,14 +38,13 @@ defmodule SnapFramework.Engine.Builder.Grid do
       graph: graph
     }
 
-    Logger.debug(inspect(grid))
-
     do_build(grid, children).graph
   end
 
   def build(graph, _), do: graph
 
   defp do_build(grid, children) do
+    Logger.debug(inspect(children))
     Enum.reduce(children, grid, &render_grid/2)
   end
 
@@ -71,15 +70,16 @@ defmodule SnapFramework.Engine.Builder.Grid do
 
   defp render_grid(_, grid), do: grid
 
-  defp render_row([type: type, module: module, data: data, opts: opts], grid)
-       when type == :component or type == :primitive do
-    render_row_item(grid, module, data, opts)
+  defp render_row(
+         [type: :component, module: module, data: data, opts: opts, children: children],
+         grid
+       ) do
+    render_row_item(grid, module, data, Keyword.merge(opts, children: children))
   end
 
   defp render_row(_, grid), do: grid
 
-  defp render_col([type: type, module: module, data: data, opts: opts], grid)
-       when type == :component or type == :primitive do
+  defp render_col([type: :primitive, module: module, data: data, opts: opts], grid) do
     render_col_item(grid, module, data, opts)
   end
 

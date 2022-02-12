@@ -20,6 +20,8 @@ defmodule SnapFramework.Engine.Compiler do
       |> EEx.compile_string(info)
       |> Code.eval_quoted(assigns, env)
 
+    Logger.debug("scrubbing result: #{inspect(result, pretty: true)}")
+
     result
     |> Scrubber.scrub()
     |> compile_graph()
