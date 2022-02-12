@@ -37,6 +37,14 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
   end
 
   defp scrub_item(
+         [[type: :component, module: _, data: _, opts: _, children: children] = child],
+         acc
+       ) do
+    children = scrub(children)
+    List.insert_at(acc, length(acc), Keyword.merge(child, children: children))
+  end
+
+  defp scrub_item(
          [type: :component, module: _, data: _, opts: _, children: children] = child,
          acc
        ) do

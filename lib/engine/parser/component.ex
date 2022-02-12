@@ -10,6 +10,38 @@ defmodule SnapFramework.Parser.Component do
     |> parse()
   end
 
+  def parse({:component, meta, [name, data, opts, [do: {:__block__, [], block}]]}) do
+    children =
+      block
+      |> Enum.reduce([], &build_child_list/2)
+
+    quote line: meta[:line] || 0 do
+      [
+        type: :component,
+        module: unquote(name),
+        data: unquote(data),
+        opts: unquote(opts),
+        children: unquote(children)
+      ]
+    end
+  end
+
+  def parse({:component, meta, [name, data, [do: {:__block__, [], block}]]}) do
+    children =
+      block
+      |> Enum.reduce([], &build_child_list/2)
+
+    quote line: meta[:line] || 0 do
+      [
+        type: :component,
+        module: unquote(name),
+        data: unquote(data),
+        opts: [],
+        children: unquote(children)
+      ]
+    end
+  end
+
   def parse({:component, meta, [name, data, opts]}) when is_list(opts) do
     quote line: meta[:line] || 0 do
       [
@@ -42,38 +74,6 @@ defmodule SnapFramework.Parser.Component do
         data: unquote(data),
         opts: [],
         children: []
-      ]
-    end
-  end
-
-  def parse({:component, meta, [name, data, opts, [do: {:__block__, [], block}]]}) do
-    children =
-      block
-      |> Enum.reduce([], &build_child_list/2)
-
-    quote line: meta[:line] || 0 do
-      [
-        type: :component,
-        module: unquote(name),
-        data: unquote(data),
-        opts: unquote(opts),
-        children: unquote(children)
-      ]
-    end
-  end
-
-  def parse({:component, meta, [name, data, [do: {:__block__, [], block}]]}) do
-    children =
-      block
-      |> Enum.reduce([], &build_child_list/2)
-
-    quote line: meta[:line] || 0 do
-      [
-        type: :component,
-        module: unquote(name),
-        data: unquote(data),
-        opts: [],
-        children: unquote(children)
       ]
     end
   end
