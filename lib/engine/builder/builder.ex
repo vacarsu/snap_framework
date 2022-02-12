@@ -14,8 +14,6 @@ defmodule SnapFramework.Engine.Builder do
   end
 
   defp render_graph(child, graph) do
-    Logger.debug(inspect(child))
-
     graph
     |> Builder.Graph.build(child)
     |> Builder.Grid.build(child)

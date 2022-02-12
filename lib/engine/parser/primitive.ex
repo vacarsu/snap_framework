@@ -8,7 +8,7 @@ defmodule SnapFramework.Parser.Primitive do
     |> parse()
   end
 
-  def parse({:primitive, meta, [name, data, opts]}) do
+  defp parse({:primitive, meta, [name, data, opts]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -19,7 +19,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:primitive, meta, [name, data]}) do
+  defp parse({:primitive, meta, [name, data]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -30,7 +30,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:text, meta, [data, opts]}) do
+  defp parse({:text, meta, [data, opts]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -41,7 +41,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:text, meta, [data]}) do
+  defp parse({:text, meta, [data]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -52,7 +52,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:rect, meta, [data, opts]}) do
+  defp parse({:rect, meta, [data, opts]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -63,7 +63,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:rect, meta, [data]}) do
+  defp parse({:rect, meta, [data]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -74,7 +74,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:rectangle, meta, [data, opts]}) do
+  defp parse({:rectangle, meta, [data, opts]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -85,7 +85,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:rectangle, meta, [data]}) do
+  defp parse({:rectangle, meta, [data]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -96,7 +96,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:rrect, meta, [data, opts]}) do
+  defp parse({:rrect, meta, [data, opts]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -107,7 +107,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:rrect, meta, [data]}) do
+  defp parse({:rrect, meta, [data]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -118,7 +118,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:rounded_rectangle, meta, [data, opts]}) do
+  defp parse({:rounded_rectangle, meta, [data, opts]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -129,7 +129,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:rounded_rectangle, meta, [data]}) do
+  defp parse({:rounded_rectangle, meta, [data]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -140,7 +140,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:circle, meta, [data, opts]}) do
+  defp parse({:circle, meta, [data, opts]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -151,7 +151,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:circle, meta, [data]}) do
+  defp parse({:circle, meta, [data]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -162,7 +162,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:line, meta, data, [data, opts]}) do
+  defp parse({:line, meta, data, [data, opts]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -173,7 +173,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:line, meta, [data]}) do
+  defp parse({:line, meta, [data]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -184,7 +184,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:arc, meta, [data, opts]}) do
+  defp parse({:arc, meta, [data, opts]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -195,7 +195,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:arc, meta, [data]}) do
+  defp parse({:arc, meta, [data]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -206,7 +206,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:triangle, meta, [data, opts]}) do
+  defp parse({:triangle, meta, [data, opts]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -217,7 +217,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:triangle, meta, [data]}) do
+  defp parse({:triangle, meta, [data]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -228,7 +228,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:ellipse, meta, [data, opts]}) do
+  defp parse({:ellipse, meta, [data, opts]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -239,7 +239,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:ellipse, meta, [data]}) do
+  defp parse({:ellipse, meta, [data]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -250,7 +250,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:quad, meta, [data, opts]}) do
+  defp parse({:quad, meta, [data, opts]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -261,7 +261,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:quad, meta, [data]}) do
+  defp parse({:quad, meta, [data]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -272,7 +272,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:sector, meta, [data, opts]}) do
+  defp parse({:sector, meta, [data, opts]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -283,7 +283,7 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse({:sector, meta, [data]}) do
+  defp parse({:sector, meta, [data]}) do
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -294,5 +294,5 @@ defmodule SnapFramework.Parser.Primitive do
     end
   end
 
-  def parse(ast), do: ast
+  defp parse(ast), do: ast
 end

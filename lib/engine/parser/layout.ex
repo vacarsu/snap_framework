@@ -4,7 +4,7 @@ defmodule SnapFramework.Parser.Layout do
     |> parse()
   end
 
-  def parse({:layout, meta, [opts, [do: {:__block__, [], block}]]}) do
+  defp parse({:layout, meta, [opts, [do: {:__block__, [], block}]]}) do
     children =
       block
       |> Enum.reduce([], &build_child_list/2)
@@ -21,13 +21,13 @@ defmodule SnapFramework.Parser.Layout do
     end
   end
 
-  def parse(ast), do: ast
+  defp parse(ast), do: ast
 
-  def build_child_list({:=, [], [_, component]}, acc) do
+  defp build_child_list({:=, [], [_, component]}, acc) do
     List.insert_at(acc, length(acc), component)
   end
 
-  def build_child_list(_ast, acc) do
+  defp build_child_list(_ast, acc) do
     acc
   end
 end

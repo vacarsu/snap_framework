@@ -13,6 +13,10 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
     Enum.reduce(parsed, acc, &scrub_item/2)
   end
 
+  defp scrub_item(nil, acc) do
+    acc
+  end
+
   defp scrub_item("\n", acc) do
     acc
   end

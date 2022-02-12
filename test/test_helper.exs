@@ -1,0 +1,3 @@
+RingLogger.attach()
+
+ExUnit.start()

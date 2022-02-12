@@ -4,7 +4,7 @@ defmodule SnapFramework.Parser.Grid do
     |> parse()
   end
 
-  def parse({:grid, meta, [opts, [do: {:__block__, [], block}]]}) do
+  defp parse({:grid, meta, [opts, [do: {:__block__, [], block}]]}) do
     children =
       block
       |> Enum.reduce([], &build_grid_list/2)
@@ -33,9 +33,9 @@ defmodule SnapFramework.Parser.Grid do
     end
   end
 
-  def parse(ast), do: ast
+  defp parse(ast), do: ast
 
-  def build_grid_list({:=, [], [_, {:row, _, [[do: {:__block__, [], block}]]}]}, acc) do
+  defp build_grid_list({:=, [], [_, {:row, _, [[do: {:__block__, [], block}]]}]}, acc) do
     children =
       block
       |> Enum.reduce([], &build_child_list/2)
@@ -43,7 +43,7 @@ defmodule SnapFramework.Parser.Grid do
     List.insert_at(acc, length(acc), type: :row, children: children)
   end
 
-  def build_grid_list({:=, [], [_, {:col, _, [[do: {:__block__, [], block}]]}]}, acc) do
+  defp build_grid_list({:=, [], [_, {:col, _, [[do: {:__block__, [], block}]]}]}, acc) do
     children =
       block
       |> Enum.reduce([], &build_child_list/2)
@@ -51,15 +51,15 @@ defmodule SnapFramework.Parser.Grid do
     List.insert_at(acc, length(acc), type: :col, children: children)
   end
 
-  def build_grid_list(_ast, acc) do
+  defp build_grid_list(_ast, acc) do
     acc
   end
 
-  def build_child_list({:=, [], [_, component]}, acc) do
+  defp build_child_list({:=, [], [_, component]}, acc) do
     List.insert_at(acc, length(acc), component)
   end
 
-  def build_child_list(_ast, acc) do
+  defp build_child_list(_ast, acc) do
     acc
   end
 end

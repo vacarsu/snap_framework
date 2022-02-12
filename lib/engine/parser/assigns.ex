@@ -8,7 +8,7 @@ defmodule SnapFramework.Parser.Assigns do
     |> parse(assigns)
   end
 
-  def parse({:@, meta, [{name, _, _atom}]}, assigns) do
+  defp parse({:@, meta, [{name, _, _atom}]}, assigns) do
     assign = SnapFramework.Engine.fetch_assign!(assigns, name)
 
     quote line: meta[:line] || 0 do
@@ -16,5 +16,5 @@ defmodule SnapFramework.Parser.Assigns do
     end
   end
 
-  def parse(ast, _assigns), do: ast
+  defp parse(ast, _assigns), do: ast
 end
