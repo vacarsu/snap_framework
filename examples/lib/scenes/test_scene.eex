@@ -1,27 +1,5 @@
 <%= graph font_size: 20 %>
 
-<%= component Examples.Component.ButtonList, nil, [] do %>
-    <%= component Examples.Component.ButtonList, nil, [] do %>
-        <%= grid item_width: 50, item_height: 50, rows: 3, cols: 20, translate: {5, 100} do %>
-            <%= col do %>
-                <%= for label <- @buttons do %>
-                    <%= component Scenic.Component.Button, "Hi" %>
-                <% end %>
-            <% end %>
-        <% end %>
-    <% end %>
-<% end %>
-
-<%= component Examples.Component.ButtonList, nil, translate: {5, 300} do %>
-    <%= layout width: 800, height: 800 do %>
-        <%= component Scenic.Component.Button, "Hi" %>
-        <%= component Scenic.Component.Button, "Hi" %>
-        <%= component Scenic.Component.Button, "Hi" %>
-
-        <%= layout width: 800, height: 800, translate: {5, 300} do %>
-            <%= component Scenic.Component.Button, "Hi" %>
-            <%= component Scenic.Component.Button, "Hi" %>
-            <%= component Scenic.Component.Button, "Hi" %>
-        <% end %>
-    <% end %>
+<%= for label <- @buttons do %>
+    <%= component Scenic.Component.Button, "Hi" %>
 <% end %>

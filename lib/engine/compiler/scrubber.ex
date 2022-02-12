@@ -56,7 +56,6 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
          ["\n", [type: :primitive, module: _, data: _, opts: _] = child, "\n"],
          acc
        ) do
-    Logger.debug("special case prim: #{inspect(child)}")
     List.insert_at(acc, length(acc), child)
   end
 
@@ -194,14 +193,21 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
     end
   end
 
+  # defp scrub_item([["\n" | _]] = children, acc) do
+  #   Logger.debug("special case")
+  #   List.insert_at(acc, length(acc), Enum.reduce(children, acc, &scrub_item/2))
+  # end
+
   # defp scrub_item([%{type: _type} | _] = child, acc) do
   #   List.insert_at(acc, length(acc), child)
   # end
 
-  # defp scrub_item([first | _], acc) do
-  #   Logger.debug("first #{inspect(first)}")
-  #   List.insert_at(acc, length(acc), scrub(first))
-  # end
+  defp scrub_item([["\n", _, "\n"] | _] = children, acc) do
+    Logger.debug("nested #{inspect(children)}")
+    children = scrub(children)
+
+    Enum.reduce(children, acc, fn child, acc -> List.insert_at(acc, length(acc), child) end)
+  end
 
   defp scrub_item(child, acc) do
     Logger.debug(inspect(child))
