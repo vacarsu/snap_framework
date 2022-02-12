@@ -77,7 +77,18 @@ defmodule SnapFramework.Engine.Builder.Grid do
     render_row_item(grid, module, data, Keyword.merge(opts, children: children))
   end
 
+  defp render_row([type: :primitive, module: module, data: data, opts: opts], grid) do
+    render_col_item(grid, module, data, opts)
+  end
+
   defp render_row(_, grid), do: grid
+
+  defp render_col(
+         [type: :component, module: module, data: data, opts: opts, children: children],
+         grid
+       ) do
+    render_row_item(grid, module, data, Keyword.merge(opts, children: children))
+  end
 
   defp render_col([type: :primitive, module: module, data: data, opts: opts], grid) do
     render_col_item(grid, module, data, opts)

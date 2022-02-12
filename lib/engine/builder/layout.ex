@@ -64,16 +64,21 @@ defmodule SnapFramework.Engine.Builder.Layout do
            padding: padding,
            width: width,
            height: height,
-           translate: _translate,
+           translate: translate,
            children: children
          ],
          layout
        ) do
+    {x, y} = translate
+
     nested_layout = %Layout{
       layout
       | padding: padding,
         width: width,
-        height: height
+        height: height,
+        last_x: x,
+        last_y: y,
+        translate: translate
     }
 
     graph = do_build(nested_layout, children).graph

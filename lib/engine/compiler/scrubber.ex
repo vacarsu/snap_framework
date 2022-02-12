@@ -61,6 +61,13 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
   end
 
   defp scrub_item(
+         [[type: :primitive, module: _, data: _, opts: _] = child],
+         acc
+       ) do
+    List.insert_at(acc, length(acc), child)
+  end
+
+  defp scrub_item(
          [type: :primitive, module: _, data: _, opts: _] = child,
          acc
        ) do
@@ -84,7 +91,7 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
       children = scrub(children)
       List.insert_at(acc, length(acc), Keyword.merge(child, children: children))
     else
-      children = scrub(List.first(children))
+      children = scrub(children)
       List.insert_at(acc, length(acc), Keyword.merge(child, children: children))
     end
   end
