@@ -6,7 +6,10 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
   end
 
   def scrub(parsed) do
-    Enum.reduce(parsed, [], &scrub_item/2)
+    Logger.debug("before scrub: #{inspect(parsed, pretty: true)}")
+    scrubbed = Enum.reduce(parsed, [], &scrub_item/2)
+    Logger.debug("after scrub: #{inspect(scrubbed, pretty: true)}")
+    scrubbed
   end
 
   defp scrub_item(nil, acc) do
@@ -15,13 +18,6 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
 
   defp scrub_item("\n", acc) do
     acc
-  end
-
-  defp scrub_item(
-         [type: :graph, opts: _] = child,
-         acc
-       ) do
-    List.insert_at(acc, length(acc), child)
   end
 
   defp scrub_item(
@@ -34,6 +30,33 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
        ) do
     children = scrub(children)
     List.insert_at(acc, length(acc), Keyword.merge(child, children: children))
+  end
+
+  defp scrub_item(
+         ["\n", [type: :primitive, module: _, data: _, opts: _] = child, "\n"],
+         acc
+       ) do
+    List.insert_at(acc, length(acc), child)
+  end
+
+  defp scrub_item(["\n", children, "\n"], acc) do
+    Logger.debug("if case hit")
+    children = scrub(children)
+
+    Enum.reduce(children, acc, fn child, acc -> List.insert_at(acc, length(acc), child) end)
+  end
+
+  defp scrub_item([["\n", _, "\n"] | _] = children, acc) do
+    children = scrub(children)
+
+    Enum.reduce(children, acc, fn child, acc -> List.insert_at(acc, length(acc), child) end)
+  end
+
+  defp scrub_item(
+         [type: :graph, opts: _] = child,
+         acc
+       ) do
+    List.insert_at(acc, length(acc), child)
   end
 
   defp scrub_item(
@@ -50,13 +73,6 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
        ) do
     children = scrub(children)
     List.insert_at(acc, length(acc), Keyword.merge(child, children: children))
-  end
-
-  defp scrub_item(
-         ["\n", [type: :primitive, module: _, data: _, opts: _] = child, "\n"],
-         acc
-       ) do
-    List.insert_at(acc, length(acc), child)
   end
 
   defp scrub_item(
@@ -189,12 +205,6 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
       children = scrub(List.first(children))
       List.insert_at(acc, length(acc), Keyword.merge(child, children: children))
     end
-  end
-
-  defp scrub_item([["\n", _, "\n"] | _] = children, acc) do
-    children = scrub(children)
-
-    Enum.reduce(children, acc, fn child, acc -> List.insert_at(acc, length(acc), child) end)
   end
 
   defp scrub_item(child, acc) do
