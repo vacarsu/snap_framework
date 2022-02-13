@@ -5,7 +5,6 @@ defmodule SnapFramework.Engine.Builder.Layout do
   This module is responsible for taking the parsed EEx layout and builds the graph.
   """
 
-  require Logger
   alias __MODULE__
 
   defstruct last_x: 0,

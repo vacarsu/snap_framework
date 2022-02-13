@@ -1,14 +1,10 @@
 defmodule SnapFramework.Engine.Compiler.Scrubber do
-  require Logger
-
   def scrub([]) do
     []
   end
 
   def scrub(parsed) do
-    Logger.debug("before scrub: #{inspect(parsed, pretty: true)}")
     scrubbed = Enum.reduce(parsed, [], &scrub_item/2)
-    Logger.debug("after scrub: #{inspect(scrubbed, pretty: true)}")
     scrubbed
   end
 
@@ -40,7 +36,6 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
   end
 
   defp scrub_item(["\n", children, "\n"], acc) do
-    Logger.debug("if case hit")
     children = scrub(children)
 
     Enum.reduce(children, acc, fn child, acc -> List.insert_at(acc, length(acc), child) end)

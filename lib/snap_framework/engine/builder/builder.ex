@@ -5,7 +5,6 @@ defmodule SnapFramework.Engine.Builder do
   This module is responsible for taking the parsed EEx template and building the graph.
   """
 
-  require Logger
   alias __MODULE__
 
   def build_graph(list, acc \\ %{}) do
