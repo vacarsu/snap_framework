@@ -1,5 +1,5 @@
 <%= graph font_size: 20 %>
 
-<%= for label <- @buttons do %>
+<%= for label <- @buttons.buttons do %>
     <%= component Scenic.Component.Button, "Hi" %>
 <% end %>

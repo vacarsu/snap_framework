@@ -9,7 +9,6 @@ defmodule SnapFramework.Engine.Builder do
   alias __MODULE__
 
   def build_graph(list, acc \\ %{}) do
-    Logger.debug(inspect(list))
     Enum.reduce(list, acc, &render_graph/2)
   end
 

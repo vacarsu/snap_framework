@@ -135,12 +135,12 @@ defmodule SnapFramework.Engine do
 
   defp traverse(expr, assigns) do
     expr
-    |> Macro.prewalk(&SnapFramework.Parser.Assigns.run(&1, assigns))
-    |> Macro.prewalk(&SnapFramework.Parser.Grid.run/1)
-    |> Macro.prewalk(&SnapFramework.Parser.Layout.run/1)
-    |> Macro.prewalk(&SnapFramework.Parser.Graph.run/1)
-    |> Macro.prewalk(&SnapFramework.Parser.Component.run/1)
-    |> Macro.prewalk(&SnapFramework.Parser.Primitive.run/1)
+    |> Macro.prewalk(&SnapFramework.Engine.Parser.Assigns.run(&1, assigns))
+    |> Macro.prewalk(&SnapFramework.Engine.Parser.Grid.run/1)
+    |> Macro.prewalk(&SnapFramework.Engine.Parser.Layout.run/1)
+    |> Macro.prewalk(&SnapFramework.Engine.Parser.Graph.run/1)
+    |> Macro.prewalk(&SnapFramework.Engine.Parser.Component.run/1)
+    |> Macro.prewalk(&SnapFramework.Engine.Parser.Primitive.run/1)
   end
 
   @doc false

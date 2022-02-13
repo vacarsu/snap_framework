@@ -1,4 +1,4 @@
-defmodule SnapFramework.Parser.Layout do
+defmodule SnapFramework.Engine.Parser.Layout do
   def run(ast) do
     ast
     |> parse()

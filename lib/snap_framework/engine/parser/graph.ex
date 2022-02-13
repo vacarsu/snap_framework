@@ -1,4 +1,4 @@
-defmodule SnapFramework.Parser.Graph do
+defmodule SnapFramework.Engine.Parser.Graph do
   require Logger
 
   @moduledoc false

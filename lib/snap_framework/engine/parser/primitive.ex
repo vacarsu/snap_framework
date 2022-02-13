@@ -1,4 +1,4 @@
-defmodule SnapFramework.Parser.Primitive do
+defmodule SnapFramework.Engine.Parser.Primitive do
   require Logger
 
   @moduledoc false

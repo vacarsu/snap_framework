@@ -9,10 +9,6 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
     Enum.reduce(parsed, [], &scrub_item/2)
   end
 
-  def scrub(parsed, acc) do
-    Enum.reduce(parsed, acc, &scrub_item/2)
-  end
-
   defp scrub_item(nil, acc) do
     acc
   end
@@ -170,8 +166,6 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
          ] = child,
          acc
        ) do
-    Logger.debug("row children: #{inspect(children)}")
-
     if length(children) > 0 and not is_nil(List.first(children)[:type]) do
       children = scrub(children)
       List.insert_at(acc, length(acc), Keyword.merge(child, children: children))
@@ -197,24 +191,13 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
     end
   end
 
-  # defp scrub_item([["\n" | _]] = children, acc) do
-  #   Logger.debug("special case")
-  #   List.insert_at(acc, length(acc), Enum.reduce(children, acc, &scrub_item/2))
-  # end
-
-  # defp scrub_item([%{type: _type} | _] = child, acc) do
-  #   List.insert_at(acc, length(acc), child)
-  # end
-
   defp scrub_item([["\n", _, "\n"] | _] = children, acc) do
-    Logger.debug("nested #{inspect(children)}")
     children = scrub(children)
 
     Enum.reduce(children, acc, fn child, acc -> List.insert_at(acc, length(acc), child) end)
   end
 
   defp scrub_item(child, acc) do
-    Logger.debug(inspect(child))
     List.insert_at(acc, length(acc), scrub(child))
   end
 end

@@ -15,7 +15,7 @@ defmodule Examples.Scene.TestScene do
       dropdown_value: :dashboard,
       button_text: "test",
       text_value: "selected value <%= @state.dropdown_value %>",
-      buttons: ["test", "test_1", "test_2"]
+      buttons: %{buttons: ["test", "test_1", "test_2"]}
     ]
 
   # use_effect([assigns: [text_value: :any, button_text: :any]],

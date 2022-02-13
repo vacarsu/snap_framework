@@ -1,4 +1,4 @@
-defmodule SnapFramework.Parser.Grid do
+defmodule SnapFramework.Engine.Parser.Grid do
   def run(ast) do
     ast
     |> parse()

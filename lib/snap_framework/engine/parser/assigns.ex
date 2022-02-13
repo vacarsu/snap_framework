@@ -1,4 +1,4 @@
-defmodule SnapFramework.Parser.Assigns do
+defmodule SnapFramework.Engine.Parser.Assigns do
   require Logger
 
   @moduledoc false
@@ -8,7 +8,8 @@ defmodule SnapFramework.Parser.Assigns do
     |> parse(assigns)
   end
 
-  defp parse({:@, meta, [{name, _, _atom}]}, assigns) do
+  defp parse({:@, meta, [{name, _, _atom}]} = ast, assigns) do
+    Logger.debug(inspect(ast))
     assign = SnapFramework.Engine.fetch_assign!(assigns, name)
 
     quote line: meta[:line] || 0 do

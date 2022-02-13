@@ -44,7 +44,6 @@ defmodule SnapFramework.Engine.Builder.Grid do
   def build(graph, _), do: graph
 
   defp do_build(grid, children) do
-    Logger.debug(inspect(children))
     Enum.reduce(children, grid, &render_grid/2)
   end
 
