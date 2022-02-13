@@ -16,7 +16,7 @@ defmodule SnapFramework.Engine.CompilerTest do
   <%= component Scenic.Component.Button, "test", id: :btn %>
   """
 
-  test "compile_string returns correctly compiled graph from string with button component" do
+  test "compile_string returns correctly compiled graph from button" do
     graph =
       Compiler.compile_string(
         @template_string_button,
@@ -50,7 +50,7 @@ defmodule SnapFramework.Engine.CompilerTest do
   <% end %>
   """
 
-  test "compile_string returns correctly compiled graph from string with grid and row" do
+  test "compile_string returns correctly compiled graph from grid > row, > col > (Button)" do
     graph =
       Compiler.compile_string(
         @template_string_grid,
@@ -117,7 +117,7 @@ defmodule SnapFramework.Engine.CompilerTest do
   <% end %>
   """
 
-  test "compile_string returns correctly compiled graph if > grid > row (Button, Button, Button)" do
+  test "compile_string returns correctly compiled graph if > grid > row (Button)" do
     graph =
       Compiler.compile_string(
         @template_string_if_grid,
@@ -126,9 +126,7 @@ defmodule SnapFramework.Engine.CompilerTest do
         __ENV__
       )
 
-    IO.inspect(graph)
     btns = Graph.get(graph, :btn)
-    IO.inspect(btns)
     {_, data, _} = List.first(btns).data
 
     assert length(btns) == 3 and data == "test"
@@ -143,7 +141,7 @@ defmodule SnapFramework.Engine.CompilerTest do
   <% end %>
   """
 
-  test "compile_string returns correctly compiled graph if > (Button, Button, Button)" do
+  test "compile_string returns correctly compiled graph if > (Button)" do
     graph =
       Compiler.compile_string(
         @template_string_if,
@@ -152,15 +150,13 @@ defmodule SnapFramework.Engine.CompilerTest do
         __ENV__
       )
 
-    IO.inspect(graph)
     btns = Graph.get(graph, :btn)
-    IO.inspect(btns)
     {_, data, _} = List.first(btns).data
 
     assert length(btns) == 3 and data == "test"
   end
 
-  @if_for_assigns [show: true, labels: ["test 1", "test 2", "test 3"]]
+  @if_for_assigns [show: true, labels: ["test", "test", "test"]]
 
   @if_for_info [assigns: @if_for_assigns, engine: SnapFramework.Engine, trim: true]
 
@@ -182,9 +178,7 @@ defmodule SnapFramework.Engine.CompilerTest do
         __ENV__
       )
 
-    IO.inspect(graph)
     btns = Graph.get(graph, :btn)
-    IO.inspect(btns)
     {_, data, _} = List.first(btns).data
 
     assert length(btns) == 3 and data == "test"

@@ -6,9 +6,9 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
   end
 
   def scrub(parsed) do
-    Logger.debug("before scrub: #{inspect(parsed, pretty: true)}")
+    # Logger.debug("before scrub: #{inspect(parsed, pretty: true)}")
     scrubbed = Enum.reduce(parsed, [], &scrub_item/2)
-    Logger.debug("after scrub: #{inspect(scrubbed, pretty: true)}")
+    # Logger.debug("after scrub: #{inspect(scrubbed, pretty: true)}")
     scrubbed
   end
 
