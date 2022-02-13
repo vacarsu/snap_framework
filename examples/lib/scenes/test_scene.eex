@@ -1,7 +1,9 @@
 <%= graph font_size: 20 %>
 
-<%= if true do %>
-    <%= for label <- @buttons.buttons do %>
-        <%= component Scenic.Component.Button, "Hi" %>
+<%= grid item_width: 150, item_height: 50, rows: 1, cols: 3 do %>
+    <%= row do %>
+        <%= component Scenic.Component.Button, "test", id: :btn %>
+        <%= component Scenic.Component.Button, "test", id: :btn %>
+        <%= component Scenic.Component.Button, "test", id: :btn %>
     <% end %>
 <% end %>

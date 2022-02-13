@@ -6,11 +6,7 @@ defmodule SnapFramework.Engine.CompilerTest do
 
   doctest SnapFramework.Engine.Compiler
 
-  @assigns [text: "text"]
-
   @no_assigns []
-
-  @info [assigns: @assigns, engine: SnapFramework.Engine, trim: true]
 
   @no_info [assigns: @no_assigns, engine: SnapFramework.Engine, trim: true]
 
@@ -38,6 +34,7 @@ defmodule SnapFramework.Engine.CompilerTest do
   @template_string_grid """
   <%= graph font_size: 20 %>
 
+
   <%= grid item_width: 150, item_height: 50, rows: 2, cols: 3 do %>
     <%= row do %>
       <%= component Scenic.Component.Button, "test", id: :btn %>
@@ -49,7 +46,7 @@ defmodule SnapFramework.Engine.CompilerTest do
       <%= component Scenic.Component.Button, "test", id: :btn %>
       <%= component Scenic.Component.Button, "test", id: :btn %>
       <%= component Scenic.Component.Button, "test", id: :btn %>
-    <%= end %>
+    <% end %>
   <% end %>
   """
 
@@ -68,28 +65,37 @@ defmodule SnapFramework.Engine.CompilerTest do
     assert length(btns) == 6 and data == "test"
   end
 
-  # @template_string_layout """
-  # <%= graph font_size: 20 %>
+  @if_grid_assigns [show: true]
 
-  # <%= layout width: 150, height: 50 do %>
-  #   <%= component Scenic.Component.Button, "test", id: :btn %>
-  #   <%= component Scenic.Component.Button, "test", id: :btn %>
-  #   <%= component Scenic.Component.Button, "test", id: :btn %>
-  # <% end %>
-  # """
+  @if_grid_info [assigns: @if_grid_assigns, engine: SnapFramework.Engine, trim: true]
 
-  # test "compile_string returns correctly compiled graph from layout" do
-  #   graph =
-  #     Compiler.compile_string(
-  #       @template_string_layout,
-  #       [assigns: @no_assigns],
-  #       @no_info,
-  #       __ENV__
-  #     )
+  @template_string_if_grid """
+  <%= graph font_size: 20 %>
+  <%= if @show do %>
+    <%= grid item_width: 150, item_height: 50, rows: 1, cols: 3 do %>
+      <%= row do %>
+        <%= component Scenic.Component.Button, "test", id: :btn %>
+        <%= component Scenic.Component.Button, "test", id: :btn %>
+        <%= component Scenic.Component.Button, "test", id: :btn %>
+      <% end %>
+    <% end %>
+  <% end %>
+  """
 
-  #   btns = Graph.get(graph, :btn)
-  #   {_, data, _} = List.first(btns).data
+  test "compile_string returns correctly compiled graph if > grid > row (Button, Button, Button)" do
+    graph =
+      Compiler.compile_string(
+        @template_string_if_grid,
+        [assigns: @if_grid_assigns],
+        @if_grid_info,
+        __ENV__
+      )
 
-  #   assert length(btns) == 3 and data == "test"
-  # end
+    IO.inspect(graph)
+    btns = Graph.get(graph, :btn)
+    IO.inspect(btns)
+    {_, data, _} = List.first(btns).data
+
+    assert length(btns) == 3 and data == "test"
+  end
 end
