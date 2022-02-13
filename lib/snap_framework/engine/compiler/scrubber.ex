@@ -1,10 +1,14 @@
 defmodule SnapFramework.Engine.Compiler.Scrubber do
+  require Logger
+
   def scrub([]) do
     []
   end
 
   def scrub(parsed) do
+    Logger.debug("before scrub: #{inspect(parsed, pretty: true)}")
     scrubbed = Enum.reduce(parsed, [], &scrub_item/2)
+    Logger.debug("after scrub: #{inspect(scrubbed, pretty: true)}")
     scrubbed
   end
 
@@ -14,25 +18,6 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
 
   defp scrub_item("\n", acc) do
     acc
-  end
-
-  defp scrub_item(
-         [
-           "\n",
-           [type: :component, module: _, data: _, opts: _, children: children] = child,
-           "\n"
-         ],
-         acc
-       ) do
-    children = scrub(children)
-    List.insert_at(acc, length(acc), Keyword.merge(child, children: children))
-  end
-
-  defp scrub_item(
-         ["\n", [type: :primitive, module: _, data: _, opts: _] = child, "\n"],
-         acc
-       ) do
-    List.insert_at(acc, length(acc), child)
   end
 
   defp scrub_item(
@@ -262,6 +247,14 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
     children = scrub(children)
 
     Enum.reduce(children, acc, fn child, acc -> List.insert_at(acc, length(acc), child) end)
+  end
+
+  defp scrub_item(child, acc) when is_list(child) do
+    if length(child) == 1 and not is_nil(child[:type]) do
+      List.insert_at(acc, length(acc), child)
+    else
+      Enum.reduce(child, acc, fn child, acc -> List.insert_at(acc, length(acc), child) end)
+    end
   end
 
   defp scrub_item(child, acc) do

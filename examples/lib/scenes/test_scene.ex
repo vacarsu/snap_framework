@@ -15,6 +15,7 @@ defmodule Examples.Scene.TestScene do
       dropdown_value: :dashboard,
       button_text: "test",
       text_value: "selected value <%= @state.dropdown_value %>",
+      show: true,
       buttons: %{buttons: ["test", "test_1", "test_2"]}
     ]
 

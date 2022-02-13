@@ -98,4 +98,30 @@ defmodule SnapFramework.Engine.CompilerTest do
 
     assert length(btns) == 3 and data == "test"
   end
+
+  @template_string_if """
+  <%= graph font_size: 20 %>
+  <%= if @show do %>
+    <%= component Scenic.Component.Button, "test", id: :btn %>
+    <%= component Scenic.Component.Button, "test", id: :btn %>
+    <%= component Scenic.Component.Button, "test", id: :btn %>
+  <% end %>
+  """
+
+  test "compile_string returns correctly compiled graph if > (Button, Button, Button)" do
+    graph =
+      Compiler.compile_string(
+        @template_string_if,
+        [assigns: @if_grid_assigns],
+        @if_grid_info,
+        __ENV__
+      )
+
+    IO.inspect(graph)
+    btns = Graph.get(graph, :btn)
+    IO.inspect(btns)
+    {_, data, _} = List.first(btns).data
+
+    assert length(btns) == 3 and data == "test"
+  end
 end

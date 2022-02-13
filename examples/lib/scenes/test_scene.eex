@@ -1,9 +1,13 @@
 <%= graph font_size: 20 %>
 
-<%= grid item_width: 150, item_height: 50, rows: 1, cols: 3 do %>
-    <%= row do %>
-        <%= component Scenic.Component.Button, "test", id: :btn %>
-        <%= component Scenic.Component.Button, "test", id: :btn %>
-        <%= component Scenic.Component.Button, "test", id: :btn %>
-    <% end %>
+<%= if @show do %>
+    <%= component Scenic.Component.Button, "test", id: :btn %>
+    <%= component Scenic.Component.Button, "test", id: :btn, translate: {100, 0} %>
+    <%= component Scenic.Component.Button, "test", id: :btn, translate: {200, 0} %>
+<% end %>
+
+<%= if @show do %>
+    <%= text "test", id: :btn, translate: {0, 100} %>
+    <%= text "test", id: :btn, translate: {100, 100} %>
+    <%= text "test", id: :btn, translate: {200, 100} %>
 <% end %>
