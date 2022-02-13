@@ -12,19 +12,19 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
     scrubbed
   end
 
+  defp scrub_item(
+         [type: :graph, opts: _] = child,
+         acc
+       ) do
+    List.insert_at(acc, length(acc), child)
+  end
+
   defp scrub_item(nil, acc) do
     acc
   end
 
   defp scrub_item("\n", acc) do
     acc
-  end
-
-  defp scrub_item(
-         [type: :graph, opts: _] = child,
-         acc
-       ) do
-    List.insert_at(acc, length(acc), child)
   end
 
   defp scrub_item(
@@ -244,6 +244,12 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
   end
 
   defp scrub_item([["\n", _, "\n"] | _] = children, acc) do
+    children = scrub(children)
+
+    Enum.reduce(children, acc, fn child, acc -> List.insert_at(acc, length(acc), child) end)
+  end
+
+  defp scrub_item(["\n", _, "\n"] = children, acc) do
     children = scrub(children)
 
     Enum.reduce(children, acc, fn child, acc -> List.insert_at(acc, length(acc), child) end)

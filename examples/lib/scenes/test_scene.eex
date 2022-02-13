@@ -1,13 +1,7 @@
 <%= graph font_size: 20 %>
 
 <%= if @show do %>
-    <%= component Scenic.Component.Button, "test", id: :btn %>
-    <%= component Scenic.Component.Button, "test", id: :btn, translate: {100, 0} %>
-    <%= component Scenic.Component.Button, "test", id: :btn, translate: {200, 0} %>
-<% end %>
-
-<%= if @show do %>
-    <%= text "test", id: :btn, translate: {0, 100} %>
-    <%= text "test", id: :btn, translate: {100, 100} %>
-    <%= text "test", id: :btn, translate: {200, 100} %>
+    <%= for label <- @buttons do %>
+        <%= component Scenic.Component.Button, label, id: :btn %>
+    <% end %>
 <% end %>
