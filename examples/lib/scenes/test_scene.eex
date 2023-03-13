@@ -1,7 +1,0 @@
-<%= graph font_size: 20 %>
-
-<%= if @show do %>
-    <%= for label <- @buttons do %>
-        <%= component Scenic.Component.Button, label, id: :btn %>
-    <% end %>
-<% end %>

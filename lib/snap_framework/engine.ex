@@ -75,16 +75,16 @@ defmodule SnapFramework.Engine do
   @doc false
   def init(opts) do
     %{
+      assigns: %{},
+      caller: opts[:caller],
       iodata: [],
       dynamic: [],
-      vars_count: 0,
-      assigns: opts[:assigns] || []
+      vars_count: 0
     }
   end
 
   @doc false
   def handle_begin(state) do
-    Macro.var(:assigns, __MODULE__)
     %{state | iodata: [], dynamic: []}
   end
 
@@ -114,7 +114,7 @@ defmodule SnapFramework.Engine do
 
   @doc false
   def handle_expr(state, "=", ast) do
-    ast = traverse(ast, state.assigns)
+    ast = traverse(ast)
     %{iodata: iodata, dynamic: dynamic, vars_count: vars_count} = state
     var = Macro.var(:"arg#{vars_count}", __MODULE__)
     ast = quote do: unquote(var) = unquote(ast)
@@ -122,7 +122,7 @@ defmodule SnapFramework.Engine do
   end
 
   def handle_expr(state, "", ast) do
-    ast = traverse(ast, state.assigns)
+    ast = traverse(ast)
     %{dynamic: dynamic} = state
     %{state | dynamic: [ast | dynamic]}
   end
@@ -133,15 +133,25 @@ defmodule SnapFramework.Engine do
 
   ## Traversal
 
-  defp traverse(expr, assigns) do
+  defp traverse(expr) do
     expr
-    |> Macro.prewalk(&SnapFramework.Engine.Parser.Assigns.run(&1, assigns))
+    |> Macro.prewalk(&SnapFramework.Engine.Parser.Assigns.run/1)
     |> Macro.prewalk(&SnapFramework.Engine.Parser.Grid.run/1)
     |> Macro.prewalk(&SnapFramework.Engine.Parser.Layout.run/1)
     |> Macro.prewalk(&SnapFramework.Engine.Parser.Graph.run/1)
     |> Macro.prewalk(&SnapFramework.Engine.Parser.Component.run/1)
     |> Macro.prewalk(&SnapFramework.Engine.Parser.Primitive.run/1)
   end
+
+  # defp traverse(expr) do
+  #   expr
+  #   |> Macro.prewalk(&SnapFramework.Engine.Parser.Assigns.run/1)
+  #   |> Macro.prewalk(&SnapFramework.Engine.Parser.Grid.run/1)
+  #   |> Macro.prewalk(&SnapFramework.Engine.Parser.Layout.run/1)
+  #   |> Macro.prewalk(&SnapFramework.Engine.Parser.Graph.run/1)
+  #   |> Macro.prewalk(&SnapFramework.Engine.Parser.Component.run/1)
+  #   |> Macro.prewalk(&SnapFramework.Engine.Parser.Primitive.run/1)
+  # end
 
   @doc false
   def fetch_assign!(assigns, key) do

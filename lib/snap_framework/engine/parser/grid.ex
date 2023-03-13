@@ -29,6 +29,8 @@ defmodule SnapFramework.Engine.Parser.Grid do
         type: :grid,
         item_width: unquote(opts[:item_width] || 100),
         item_height: unquote(opts[:item_height] || 100),
+        padding: unquote(opts[:padding] || 0),
+        gutter: unquote(opts[:gutter] || 0),
         rows: unquote(opts[:rows]),
         cols: unquote(opts[:cols]),
         translate: unquote(opts[:translate] || {0, 0}),
@@ -39,12 +41,40 @@ defmodule SnapFramework.Engine.Parser.Grid do
 
   defp parse(ast), do: ast
 
+  defp build_grid_list({:=, [], [_, {:row, _, [opts, [do: {:__block__, [], block}]]}]}, acc) do
+    children =
+      block
+      |> Enum.reduce([], &build_child_list/2)
+
+    List.insert_at(acc, length(acc),
+      type: :row,
+      padding: opts[:padding] || 0,
+      children: children
+    )
+  end
+
   defp build_grid_list({:=, [], [_, {:row, _, [[do: {:__block__, [], block}]]}]}, acc) do
     children =
       block
       |> Enum.reduce([], &build_child_list/2)
 
-    List.insert_at(acc, length(acc), type: :row, children: children)
+    List.insert_at(acc, length(acc),
+      type: :row,
+      padding: 0,
+      children: children
+    )
+  end
+
+  defp build_grid_list({:=, [], [_, {:col, _, [opts, [do: {:__block__, [], block}]]}]}, acc) do
+    children =
+      block
+      |> Enum.reduce([], &build_child_list/2)
+
+    List.insert_at(acc, length(acc),
+      type: :col,
+      padding: opts[:padding] || 0,
+      children: children
+    )
   end
 
   defp build_grid_list({:=, [], [_, {:col, _, [[do: {:__block__, [], block}]]}]}, acc) do
@@ -52,7 +82,7 @@ defmodule SnapFramework.Engine.Parser.Grid do
       block
       |> Enum.reduce([], &build_child_list/2)
 
-    List.insert_at(acc, length(acc), type: :col, children: children)
+    List.insert_at(acc, length(acc), type: :col, padding: 0, children: children)
   end
 
   defp build_grid_list(_ast, acc) do

@@ -1,10 +1,11 @@
 defmodule Examples.Scene.TestScene do
   require Logger
+  use SnapFramework.Scene
 
-  use SnapFramework.Scene,
-    template: "lib/scenes/test_scene.eex",
-    controller: Examples.Scene.TestSceneController,
-    assigns: [
+  @impl true
+  def mount(scene) do
+    scene
+    |> assign(
       dropdown_opts: [
         {"Dashboard", :dashboard},
         {"Controls", :controls},
@@ -14,33 +15,38 @@ defmodule Examples.Scene.TestScene do
       test_clicked: false,
       dropdown_value: :dashboard,
       button_text: "test",
-      text_value: "selected value <%= @state.dropdown_value %>",
       show: true,
       buttons: ["test", "test_1", "test_2"]
-    ]
-
-  # use_effect([assigns: [text_value: :any, button_text: :any]],
-  #   run: [:on_text_change]
-  # )
-
-  use_effect(:dropdown_value, [:on_dropdown_value_change, :on_text_change])
-
-  # use_effect [on_click: [:test_btn]], :noreply, [
-  #   set: [button_text: "button clicked", text_value: "button clicked"],
-  # ]
-
-  @impl true
-  def mounted(scene) do
-    scene
+    )
   end
 
   @impl true
-  def process_event({:value_changed, :dropdown, value}, _, scene) do
-    {:noreply,
-     assign(scene, dropdown_value: value, button_text: "hi", text_value: "selected value #{value}")}
+  def process_event({:click, :btn}, _, scene) do
+    {:noreply, assign(scene, button_text: "clicked")}
   end
 
   def process_event(_, _, scene) do
     {:noreply, scene}
+  end
+
+  @impl true
+  def render(assigns) do
+    ~G"""
+    <%= graph font_size: 20 %>
+
+    <%= grid item_width: 200, item_height: 100, padding: 5, gutter: 5, rows: 1, cols: 3 do %>
+        <%= row do %>
+            <%= component Scenic.Component.Button, @button_text, id: :btn %>
+            <%= component Scenic.Component.Button, @button_text, id: :btn %>
+            <%= component Scenic.Component.Button, @button_text, id: :btn %>
+        <% end %>
+
+        <%= col do %>
+            <%= component Scenic.Component.Button, @button_text, id: :btn %>
+            <%= component Scenic.Component.Button, @button_text, id: :btn %>
+            <%= component Scenic.Component.Button, @button_text, id: :btn %>
+        <% end %>
+    <% end %>
+    """
   end
 end

@@ -7,7 +7,10 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
 
   def scrub(parsed) do
     # Logger.debug("before scrub: #{inspect(parsed, pretty: true)}")
-    scrubbed = Enum.reduce(parsed, [], &scrub_item/2)
+    scrubbed =
+      parsed
+      |> Enum.reduce([], &scrub_item/2)
+
     # Logger.debug("after scrub: #{inspect(scrubbed, pretty: true)}")
     scrubbed
   end
@@ -149,6 +152,8 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
              type: :grid,
              item_width: _item_width,
              item_height: _item_height,
+             padding: _,
+             gutter: _,
              rows: _rows,
              cols: _cols,
              translate: _translate,
@@ -173,6 +178,8 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
              type: :grid,
              item_width: _item_width,
              item_height: _item_height,
+             padding: _,
+             gutter: _,
              rows: _rows,
              cols: _cols,
              translate: _translate,
@@ -195,6 +202,8 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
            type: :grid,
            item_width: _item_width,
            item_height: _item_height,
+           padding: _,
+           gutter: _,
            rows: _rows,
            cols: _cols,
            translate: _translate,
@@ -214,6 +223,7 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
   defp scrub_item(
          [
            type: :row,
+           padding: _,
            children: children
          ] = child,
          acc
@@ -230,6 +240,7 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
   defp scrub_item(
          [
            type: :col,
+           padding: _,
            children: children
          ] = child,
          acc
