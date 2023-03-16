@@ -1,9 +1,9 @@
 defmodule Examples.Scene.TestScene do
   require Logger
-  use SnapFramework.Scene
+  use SnapFramework.Scene, opts: []
 
   @impl true
-  def mount(scene) do
+  def setup(scene) do
     scene
     |> assign(
       dropdown_opts: [
@@ -12,12 +12,19 @@ defmodule Examples.Scene.TestScene do
         {"Primitives", :primitives}
       ],
       button_icon: :button_icons,
+      button_data: {100, 50, 5},
       test_clicked: false,
       dropdown_value: :dashboard,
       button_text: "test",
       show: true,
       buttons: ["test", "test_1", "test_2"]
     )
+  end
+
+  @impl true
+  def process_info({test, _}, scene) do
+    IO.inspect("info")
+    {:noreply, scene |> assign(button_text: "test")}
   end
 
   @impl true
@@ -34,17 +41,11 @@ defmodule Examples.Scene.TestScene do
     ~G"""
     <%= graph font_size: 20 %>
 
-    <%= grid item_width: 200, item_height: 100, padding: 5, gutter: 5, rows: 1, cols: 3 do %>
+    <%= grid item_width: 200, item_height: 100, padding: 5, gutter: 5, rows: 10, cols: 10 do %>
         <%= row do %>
-            <%= component Scenic.Component.Button, @button_text, id: :btn %>
-            <%= component Scenic.Component.Button, @button_text, id: :btn %>
-            <%= component Scenic.Component.Button, @button_text, id: :btn %>
-        <% end %>
-
-        <%= col do %>
-            <%= component Scenic.Component.Button, @button_text, id: :btn %>
-            <%= component Scenic.Component.Button, @button_text, id: :btn %>
-            <%= component Scenic.Component.Button, @button_text, id: :btn %>
+          <%= component Examples.Component.Button, @button_data, id: :btn do %>
+            <%= primitive Scenic.Primitive.Text, @button_text %>
+          <% end %>
         <% end %>
     <% end %>
     """

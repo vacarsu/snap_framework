@@ -224,6 +224,12 @@ defmodule SnapFramework.Scene do
               | {atom, term, Scene.t(), list}
 
   @doc """
+  Called before graph is compiled.
+  This is for setting up assigns used by your graph.
+  """
+  @callback setup(Scene.t()) :: Scene.t()
+
+  @doc """
   Called after graph is compiled.
   If you need to do any post setup changes on your graph
   do that here.
@@ -241,6 +247,7 @@ defmodule SnapFramework.Scene do
                       process_fetch: 2,
                       process_update: 3,
                       process_event: 3,
+                      setup: 1,
                       mount: 1,
                       render: 1
 
@@ -262,8 +269,9 @@ defmodule SnapFramework.Scene do
             opts: opts,
             children: opts[:children] || []
           )
+          |> setup()
+          |> (&draw(&1, &1.assigns)).()
           |> mount()
-          |> render(scene.assigns)
 
         {:ok, scene}
       end
@@ -271,22 +279,76 @@ defmodule SnapFramework.Scene do
       defp handle_changes(old_scene, new_scene) do
         diff = MapDiff.diff(old_scene.assigns, new_scene.assigns)
 
-        render(new_scene, diff)
+        draw(new_scene, diff)
       end
 
-      defp render(scene, %{changed: :equal}, _, _, _, _, _, _) do
+      defp draw(scene, %{changed: :map_change} = diff) do
+        should_rerender? =
+          Enum.reduce(diff.added, false, fn {key, value}, acc ->
+            key in @assigns_to_track
+          end)
+
+        if should_rerender?, do: draw(scene, scene.assigns), else: scene
+      end
+
+      defp draw(scene, %{changed: :equal}) do
         scene
       end
 
-      defp render(scene, %{changed: :map_change}) do
-        render(scene, scene.assigns)
-      end
+      defp draw(scene, assigns) do
+        ast = apply(scene.assigns.module, :render, [scene.assigns])
 
-      defp render(scene, assigns) do
         graph =
-          apply(scene.assigns.module, :render, [scene.assigns])
+          ast
           |> SnapFramework.Engine.Compiler.Scrubber.scrub()
           |> SnapFramework.Engine.Compiler.compile_graph()
+
+        # IO.inspect(graph)
+
+        graph =
+          if not is_nil(Map.get(scene.assigns, :graph)) do
+            Scenic.Graph.map(graph, fn
+              %{
+                module: Scenic.Primitive.Component,
+                data: {new_module, data, _scene_id},
+                id: new_id
+              } = prim ->
+                # IO.inspect("new id: #{new_id}")
+
+                old_prims =
+                  Scenic.Graph.find(scene.assigns.graph, fn id ->
+                    if id == new_id, do: true, else: false
+                  end)
+
+                old_prim =
+                  Enum.find(old_prims, fn
+                    %{module: Scenic.Primitive.Component, data: {old_module, _, scene_id}} =
+                        old_prim ->
+                      if old_module = new_module, do: true, else: false
+
+                    _ ->
+                      false
+                  end)
+
+                # IO.inspect(old_prim)
+
+                if not is_nil(old_prim) do
+                  %{module: Scenic.Primitive.Component, data: {_old_module, _data, scene_id}} =
+                    old_prim
+
+                  %{prim | data: {new_module, data, scene_id}}
+                else
+                  prim
+                end
+
+              prim ->
+                prim
+            end)
+          else
+            graph
+          end
+
+        # IO.inspect(graph)
 
         scene
         |> assign(graph: graph)
@@ -327,6 +389,7 @@ defmodule SnapFramework.Scene do
 
   defp deps() do
     quote do
+      require IEx
       import SnapFramework.Scene
       import SnapFramework.Scene.Helpers
     end
@@ -336,6 +399,7 @@ defmodule SnapFramework.Scene do
     quote do
       @before_compile SnapFramework.Scene
 
+      def setup(scene), do: scene
       def mount(scene), do: scene
       def terminate(_, scene), do: {:noreply, scene}
       def process_call(_msg, _from, scene), do: {:reply, scene, scene}
@@ -356,7 +420,8 @@ defmodule SnapFramework.Scene do
 
       unquote(scene_handlers())
 
-      defoverridable mount: 1,
+      defoverridable setup: 1,
+                     mount: 1,
                      process_call: 3,
                      process_info: 2,
                      process_cast: 2,
@@ -374,6 +439,10 @@ defmodule SnapFramework.Scene do
       def handle_input(input, id, scene) do
         {response_type, new_scene} = scene.module.process_input(input, id, scene)
         {response_type, handle_changes(scene, new_scene)}
+      end
+
+      def handle_info(:mount, scene) do
+        {:noreply, scene}
       end
 
       def handle_info(msg, scene) do

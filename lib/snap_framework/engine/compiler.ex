@@ -1,5 +1,4 @@
 defmodule SnapFramework.Engine.Compiler do
-  alias Macro.Env
   alias SnapFramework.Engine.Compiler.Scrubber
   alias SnapFramework.Engine.Builder
 

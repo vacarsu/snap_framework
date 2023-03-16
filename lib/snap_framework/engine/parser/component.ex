@@ -9,6 +9,8 @@ defmodule SnapFramework.Engine.Parser.Component do
   end
 
   defp parse({:component, meta, [name, data, opts, [do: {:__block__, [], block}]]}) do
+    IO.inspect(data)
+
     children =
       block
       |> Enum.reduce([], &build_child_list/2)

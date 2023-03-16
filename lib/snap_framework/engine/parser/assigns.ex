@@ -1,20 +1,28 @@
 defmodule SnapFramework.Engine.Parser.Assigns do
   @moduledoc false
 
-  # @assigns_var Macro.var(:assigns, nil)
+  # def build({:@, _meta, [{name, _, _atom}]}, state) do
+  #   %{state | assigns: [name | state.assigns]}
+  # end
 
-  def run(ast) do
+  # def build(_ast, state), do: state
+
+  def run(ast, state) do
     ast
-    |> parse()
+    |> parse(state)
   end
 
-  defp parse({:@, meta, [{name, _, _atom}]}) do
-    # assign = SnapFramework.Engine.fetch_assign!(assigns, name)
+  defp parse({:@, meta, [{name, _, _atom}]} = ast, state) do
+    Module.put_attribute(state.caller.module, :assigns_to_track, [
+      name | Module.get_attribute(state.caller.module, :assigns_to_track)
+    ])
+
+    IO.inspect(ast)
 
     quote line: meta[:line] || 0 do
       var!(assigns)[unquote(name)]
     end
   end
 
-  defp parse(ast), do: ast
+  defp parse(ast, _state), do: ast
 end

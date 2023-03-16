@@ -74,8 +74,10 @@ defmodule SnapFramework.Engine do
 
   @doc false
   def init(opts) do
+    Module.register_attribute(opts[:caller].module, :assigns_to_track, accumulate: false)
+    Module.put_attribute(opts[:caller].module, :assigns_to_track, [])
+
     %{
-      assigns: %{},
       caller: opts[:caller],
       iodata: [],
       dynamic: [],
@@ -114,7 +116,7 @@ defmodule SnapFramework.Engine do
 
   @doc false
   def handle_expr(state, "=", ast) do
-    ast = traverse(ast)
+    ast = traverse(ast, state)
     %{iodata: iodata, dynamic: dynamic, vars_count: vars_count} = state
     var = Macro.var(:"arg#{vars_count}", __MODULE__)
     ast = quote do: unquote(var) = unquote(ast)
@@ -122,7 +124,7 @@ defmodule SnapFramework.Engine do
   end
 
   def handle_expr(state, "", ast) do
-    ast = traverse(ast)
+    ast = traverse(ast, state)
     %{dynamic: dynamic} = state
     %{state | dynamic: [ast | dynamic]}
   end
@@ -133,25 +135,15 @@ defmodule SnapFramework.Engine do
 
   ## Traversal
 
-  defp traverse(expr) do
+  defp traverse(expr, state) do
     expr
-    |> Macro.prewalk(&SnapFramework.Engine.Parser.Assigns.run/1)
+    |> Macro.prewalk(&SnapFramework.Engine.Parser.Assigns.run(&1, state))
     |> Macro.prewalk(&SnapFramework.Engine.Parser.Grid.run/1)
     |> Macro.prewalk(&SnapFramework.Engine.Parser.Layout.run/1)
     |> Macro.prewalk(&SnapFramework.Engine.Parser.Graph.run/1)
     |> Macro.prewalk(&SnapFramework.Engine.Parser.Component.run/1)
     |> Macro.prewalk(&SnapFramework.Engine.Parser.Primitive.run/1)
   end
-
-  # defp traverse(expr) do
-  #   expr
-  #   |> Macro.prewalk(&SnapFramework.Engine.Parser.Assigns.run/1)
-  #   |> Macro.prewalk(&SnapFramework.Engine.Parser.Grid.run/1)
-  #   |> Macro.prewalk(&SnapFramework.Engine.Parser.Layout.run/1)
-  #   |> Macro.prewalk(&SnapFramework.Engine.Parser.Graph.run/1)
-  #   |> Macro.prewalk(&SnapFramework.Engine.Parser.Component.run/1)
-  #   |> Macro.prewalk(&SnapFramework.Engine.Parser.Primitive.run/1)
-  # end
 
   @doc false
   def fetch_assign!(assigns, key) do
