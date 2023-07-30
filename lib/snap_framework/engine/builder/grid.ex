@@ -13,8 +13,8 @@ defmodule SnapFramework.Engine.Builder.Grid do
             max_rows: nil,
             max_cols: nil,
             curr_padding: 0,
-            curr_row: 0,
-            curr_col: 0,
+            curr_row: 1,
+            curr_col: 1,
             graph: nil
 
   def build(
@@ -64,15 +64,9 @@ defmodule SnapFramework.Engine.Builder.Grid do
         &render_row/2
       )
 
-    next_x = grid.start_x + padding + grid.item_width * 1
-    next_y = grid.start_y + padding
-
     %Grid{
       grid
-      | next_x: next_x,
-        next_y: next_y,
-        curr_row: grid.curr_row + 1,
-        curr_padding: grid.padding
+      | curr_padding: grid.padding
     }
   end
 
@@ -87,15 +81,9 @@ defmodule SnapFramework.Engine.Builder.Grid do
         &render_col/2
       )
 
-    next_x = grid.start_x + padding
-    next_y = grid.start_y + padding + grid.item_height * 1
-
     %Grid{
       grid
-      | next_x: next_x,
-        next_y: next_y,
-        curr_col: grid.curr_col + 1,
-        curr_padding: grid.padding
+      | curr_padding: grid.padding
     }
   end
 
@@ -136,17 +124,17 @@ defmodule SnapFramework.Engine.Builder.Grid do
            next_y: next_y,
            graph: graph,
            item_width: item_width,
-           max_rows: max_rows,
            max_cols: max_cols,
+           max_rows: max_rows,
            curr_padding: curr_padding,
-           curr_row: curr_row,
-           curr_col: curr_col
+           curr_col: curr_col,
+           curr_row: curr_row
          } = grid,
          module,
          data,
          opts
        )
-       when curr_col < max_cols and curr_row < max_rows do
+       when curr_col < max_cols do
     %Grid{
       grid
       | next_x: next_x + item_width + curr_padding,
@@ -166,8 +154,8 @@ defmodule SnapFramework.Engine.Builder.Grid do
            next_y: next_y,
            graph: graph,
            item_height: item_height,
-           max_rows: max_rows,
            max_cols: max_cols,
+           max_rows: max_rows,
            curr_padding: curr_padding,
            curr_row: curr_row,
            curr_col: curr_col
@@ -176,50 +164,20 @@ defmodule SnapFramework.Engine.Builder.Grid do
          data,
          opts
        )
-       when curr_col >= max_cols and curr_row < max_rows do
+       when curr_col == max_cols and curr_row < max_rows do
     %Grid{
       grid
       | next_x: start_x,
         next_y: next_y + item_height + curr_padding,
-        curr_row: curr_row + 1,
-        graph: module.add_to_graph(graph, data, Keyword.merge(opts, translate: {next_x, next_y}))
-    }
-  end
-
-  # RENDERING COL ITEM
-  # At max row so we need to move down to the next col for next pass.
-  defp render_row_item(
-         %Grid{
-           start_y: start_y,
-           next_x: next_x,
-           next_y: next_y,
-           graph: graph,
-           item_height: item_height,
-           item_width: item_width,
-           max_rows: max_rows,
-           max_cols: max_cols,
-           curr_padding: curr_padding,
-           curr_row: curr_row,
-           curr_col: curr_col
-         } = grid,
-         module,
-         data,
-         opts
-       )
-       when curr_col < max_cols and curr_row == max_rows do
-    %Grid{
-      grid
-      | next_x: next_x + item_width + curr_padding,
-        next_y: start_y + curr_padding + item_height * curr_col + 1,
+        curr_col: 1,
         curr_row: curr_row + 1,
         graph: module.add_to_graph(graph, data, Keyword.merge(opts, translate: {next_x, next_y}))
     }
   end
 
   # RENDERING ROW ITEM
-  # At max columns and max rows so the grid is full.
-  # just increment to the next row and log a warning next
-  # pass. We ignore any other primitives from here on.
+  # At max columns and rows so this will be the last component in this column.
+  # increment next row and col to log on next pass
   defp render_row_item(
          %Grid{
            start_x: start_x,
@@ -227,8 +185,8 @@ defmodule SnapFramework.Engine.Builder.Grid do
            next_y: next_y,
            graph: graph,
            item_height: item_height,
-           max_rows: max_rows,
            max_cols: max_cols,
+           max_rows: max_rows,
            curr_padding: curr_padding,
            curr_row: curr_row,
            curr_col: curr_col
@@ -242,6 +200,7 @@ defmodule SnapFramework.Engine.Builder.Grid do
       grid
       | next_x: start_x,
         next_y: next_y + item_height + curr_padding,
+        curr_col: curr_col + 1,
         curr_row: curr_row + 1,
         graph: module.add_to_graph(graph, data, Keyword.merge(opts, translate: {next_x, next_y}))
     }
@@ -265,8 +224,8 @@ defmodule SnapFramework.Engine.Builder.Grid do
            next_x: next_x,
            next_y: next_y,
            graph: graph,
-           max_rows: max_rows,
            max_cols: max_cols,
+           max_rows: max_rows,
            curr_padding: curr_padding,
            curr_row: curr_row,
            curr_col: curr_col,
@@ -276,43 +235,12 @@ defmodule SnapFramework.Engine.Builder.Grid do
          data,
          opts
        )
-       when curr_row < max_rows and curr_col < max_cols do
+       when curr_row < max_rows do
     %Grid{
       grid
       | next_x: grid.start_x + curr_padding,
         next_y: next_y + item_height + curr_padding,
         curr_row: curr_row + 1,
-        graph: module.add_to_graph(graph, data, Keyword.merge(opts, translate: {next_x, next_y}))
-    }
-  end
-
-  # RENDERING COL ITEM
-  # At max rows so this will be the last component in this column.
-  # reset curr_row since we're not at the max col yet.
-  # and increment to next col.
-  defp render_col_item(
-         %Grid{
-           start_y: _start_y,
-           next_x: next_x,
-           next_y: next_y,
-           graph: graph,
-           item_height: item_height,
-           max_rows: max_rows,
-           max_cols: max_cols,
-           curr_padding: curr_padding,
-           curr_row: curr_row,
-           curr_col: curr_col
-         } = grid,
-         module,
-         data,
-         opts
-       )
-       when curr_col < max_cols and curr_row == max_rows do
-    %Grid{
-      grid
-      | next_x: grid.start_x + curr_padding,
-        next_y: next_y + item_height + curr_padding,
-        curr_col: curr_col + 1,
         graph: module.add_to_graph(graph, data, Keyword.merge(opts, translate: {next_x, next_y}))
     }
   end
@@ -326,16 +254,18 @@ defmodule SnapFramework.Engine.Builder.Grid do
            next_y: next_y,
            graph: graph,
            item_width: item_width,
+           item_height: item_height,
+           max_cols: max_cols,
            max_rows: max_rows,
            curr_padding: curr_padding,
-           curr_row: curr_row,
-           curr_col: curr_col
+           curr_col: curr_col,
+           curr_row: curr_row
          } = grid,
          module,
          data,
          opts
        )
-       when curr_row == max_rows do
+       when curr_row == max_rows and curr_col < max_cols do
     %Grid{
       grid
       | next_x: next_x + item_width + curr_padding,
@@ -345,21 +275,20 @@ defmodule SnapFramework.Engine.Builder.Grid do
   end
 
   # RENDERING COL ITEM
-  # At max columns and max rows so the grid is full.
-  # Increment to the next col, reset the row, and log a warning next
-  # pass. We ignore any other primitives from here on.
-  defp render_col_item(
+  # At max columns and rows so this will be the last component in this column.
+  # increment next row and col to log on next pass
+  defp render_row_item(
          %Grid{
-           start_y: start_y,
+           start_x: start_x,
            next_x: next_x,
            next_y: next_y,
            graph: graph,
-           max_rows: max_rows,
+           item_height: item_height,
            max_cols: max_cols,
+           max_rows: max_rows,
            curr_padding: curr_padding,
            curr_row: curr_row,
-           curr_col: curr_col,
-           item_width: item_width
+           curr_col: curr_col
          } = grid,
          module,
          data,
@@ -368,9 +297,10 @@ defmodule SnapFramework.Engine.Builder.Grid do
        when curr_col == max_cols and curr_row == max_rows do
     %Grid{
       grid
-      | next_x: next_x + item_width + curr_padding,
-        next_y: start_y + curr_padding,
+      | next_x: start_x,
+        next_y: next_y + item_height + curr_padding,
         curr_col: curr_col + 1,
+        curr_row: curr_row + 1,
         graph: module.add_to_graph(graph, data, Keyword.merge(opts, translate: {next_x, next_y}))
     }
   end

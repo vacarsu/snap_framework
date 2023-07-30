@@ -303,52 +303,44 @@ defmodule SnapFramework.Scene do
           |> SnapFramework.Engine.Compiler.Scrubber.scrub()
           |> SnapFramework.Engine.Compiler.compile_graph()
 
-        # IO.inspect(graph)
-
         graph =
-          if not is_nil(Map.get(scene.assigns, :graph)) do
+          if is_nil(Map.get(scene.assigns, :graph)) do
+            graph
+          else
             Scenic.Graph.map(graph, fn
               %{
                 module: Scenic.Primitive.Component,
                 data: {new_module, data, _scene_id},
                 id: new_id
               } = prim ->
-                # IO.inspect("new id: #{new_id}")
-
                 old_prims =
                   Scenic.Graph.find(scene.assigns.graph, fn id ->
-                    if id == new_id, do: true, else: false
+                    id == new_id
                   end)
 
                 old_prim =
                   Enum.find(old_prims, fn
                     %{module: Scenic.Primitive.Component, data: {old_module, _, scene_id}} =
                         old_prim ->
-                      if old_module = new_module, do: true, else: false
+                      old_module == new_module
 
                     _ ->
                       false
                   end)
 
-                # IO.inspect(old_prim)
-
-                if not is_nil(old_prim) do
+                if is_nil(old_prim) do
+                  prim
+                else
                   %{module: Scenic.Primitive.Component, data: {_old_module, _data, scene_id}} =
                     old_prim
 
                   %{prim | data: {new_module, data, scene_id}}
-                else
-                  prim
                 end
 
               prim ->
                 prim
             end)
-          else
-            graph
           end
-
-        # IO.inspect(graph)
 
         scene
         |> assign(graph: graph)
