@@ -277,7 +277,7 @@ defmodule SnapFramework.Engine.Builder.Grid do
   # RENDERING COL ITEM
   # At max columns and rows so this will be the last component in this column.
   # increment next row and col to log on next pass
-  defp render_row_item(
+  defp render_col_item(
          %Grid{
            start_x: start_x,
            next_x: next_x,
@@ -322,47 +322,5 @@ defmodule SnapFramework.Engine.Builder.Grid do
     Could not fit module #{inspect(module)} in grid.
     Try adjusting your max :rows, and max :cols settings.
     """)
-  end
-
-  defp next_row(
-         %{start_y: start_y, curr_padding: curr_padding, curr_row: curr_row, max_rows: max_rows} =
-           grid
-       )
-       when curr_row + 1 <= max_rows do
-    curr_row = curr_row + 1
-    next_y = start_y + curr_padding + grid.item_height * curr_row
-
-    %Grid{grid | next_y: next_y, curr_row: curr_row}
-  end
-
-  defp next_row(
-         %{start_y: start_y, curr_padding: curr_padding, curr_row: curr_row, max_rows: max_rows} =
-           grid
-       ) do
-    curr_row = 0
-    curr_col = grid.curr_col + 1
-    next_y = start_y + curr_padding + grid.item_height * curr_row
-
-    next_col(%Grid{grid | next_y: next_y, curr_row: curr_row, curr_col: curr_col})
-  end
-
-  defp next_col(
-         %{start_x: start_x, curr_padding: curr_padding, curr_row: curr_row, max_rows: max_rows} =
-           grid
-       )
-       when curr_row <= max_rows do
-    curr_row = curr_row + 1
-
-    next_x = start_x + curr_padding + grid.item_width * curr_row
-
-    %Grid{grid | next_x: next_x, curr_row: curr_row}
-  end
-
-  defp next_col(%{start_x: start_x, curr_padding: curr_padding, curr_row: curr_row} = grid) do
-    curr_row = curr_row + 1
-
-    next_x = start_x + curr_padding + grid.item_width * curr_row
-
-    %Grid{grid | next_x: next_x, curr_row: curr_row}
   end
 end

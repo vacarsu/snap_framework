@@ -2,52 +2,46 @@ defmodule SnapFramework.Component do
   @moduledoc """
   ## Overview
 
-  SnapFramework.Component is nearly identical to a Scene. The main different is the addition of the defcomponent macro,
-  as well as the addition of the scenic opts key.
-  defcomponent build out your scenic validate function and helper functions, automatically so you don't have to.
+  SnapFramework.Component is nearly identical to a Scene. The main difference is it automatically generates some helper functions and validation functions based
+  on the options you add when ```use``` is called.
 
   ``` elixir
   defmodule Example.Component.MyComponent do
     use SnapFramework.Component,
       name: :my_component,
-      type: :tuple,
-      template: "lib/scenes/my_component.eex",
-      controller: :none,
-      assigns: []
+      type: :tuple
   end
   ```
 
-  The above example defines a component that takes in a tuple for data. and build your helper function defined as ```my_component/3```
-
-  ## Templates
+  The above example defines a component that takes in a tuple for data and builds your helper function defined as ```my_component/3```
 
   Component templates also have an additional feature that primitives or scene templates do not have. You can inject children into them.
   Lets write a basic icon button component that takes an icon child.
 
   ``` elixir
-  # template
-  <%= graph font_size: 20 %>
-
-  <%= primitive Scenic.Primitive.Circle,
-      15,
-      id: :bg,
-      translate: {23, 23}
-  %>
-
-  @children
-
-  # component module
   defmodule Example.Component.IconButton do
     use SnapFramework.Component,
-      name: :icon_button,
-      template: "lib/icons/icon_button/icon_button.eex",
-      controller: :none,
-      assigns: [],
-      opts: []
+      name: :icon_button
+
+    def render(assigns) do
+      ~G\"""
+      <%= graph font_size: 20 %>
+
+      <%= primitive Scenic.Primitive.Circle,
+          15,
+          id: :bg,
+          translate: {23, 23}
+      %>
+
+      @children
+      \"""
+    end
   end
   ```
 
   Now lets see how to use this component with children in a scene. This assumes we've already made an icon component.
+  As you can see we are nesting a component within another component. The compiler will pass any nested components onto the scene of the parent
+  component as children.
 
   ``` elixir
     <%= graph font_size: 20 %>
@@ -62,6 +56,8 @@ defmodule SnapFramework.Component do
       %>
     <% end %>
   ```
+
+  Additionally because children are assigns in the engine whenever you change them at the top level, the graphs all the way down your component tree will be update.
 
   That's all there is to putting children in components!
   """
