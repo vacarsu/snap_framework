@@ -19,8 +19,15 @@ Inital setup is the same as any Scenic app.
   defmodule Example.Scene.MyScene do
     use SnapFramework.Scene
 
+    def setup(scene) do
+      assign(scene,
+        dropdown_opts: [{"Option 1", "Option 1"}, {"Option 2", "Option 2"}, {"Option 3", "Option 3"}],
+        dropdown_value: "Option 1"
+      )
+    end
+
     def render(assigns) do
-      ~G\"""
+      ~G"""
       <%= graph font_size: 20 %>
 
       <%= primitive Scenic.Primitive.Text,
@@ -36,7 +43,11 @@ Inital setup is the same as any Scenic app.
           id: :dropdown,
           translate: {20, 20}
       %>
-      \"""
+      """
+    end
+
+    def process_event({:value_changed, :dropdown, value}, _, scene) do
+      {:noreply, assign(scene, dropdown_value: value)}
     end
   end
   ```
@@ -49,6 +60,8 @@ Inital setup is the same as any Scenic app.
   If you need to do some special setup, like request input, subscribe to a PubSub service, or add some runtime assigns. You can do that in the setup callback.
   It gives you the scene struct and should return a scene struct.
 
+  These callbacks do not trigger redraws.
+
   The setup callback runs before the graph is initialized. So any added or modified assigns will be included in the template.
   The graph however is not included on the scene yet.
 
@@ -56,12 +69,31 @@ Inital setup is the same as any Scenic app.
   defmodule Example.Scene.MyScene do
     use SnapFramework.Scene
 
-    use_effect :dropdown_value, :on_dropdown_value_change
-
     def setup(scene) do
-      Scenic.PubSub.subscribe(:pubsub_service)
+      assign(scene,
+        dropdown_opts: [{"Option 1", "Option 1"}, {"Option 2", "Option 2"}, {"Option 3", "Option 3"}],
+        dropdown_value: "Option 1"
+      )
+    end
 
-      assign(scene, new_assign: true)
+    def render(assigns) do
+      ~G"""
+      <%= graph font_size: 20 %>
+
+      <%= primitive Scenic.Primitive.Text,
+          "selected value #{@dropdown_value}",
+          id: :dropdown_value_text,
+          translate: {20, 80}
+      %>
+
+      <%= component Scenic.Component.Input.Dropdown, {
+              @dropdown_opts,
+              @dropdown_value
+          },
+          id: :dropdown,
+          translate: {20, 20}
+      %>
+      """
     end
 
     def process_event({:value_changed, :dropdown, value}, _, scene) do
@@ -79,16 +111,35 @@ Inital setup is the same as any Scenic app.
   defmodule Example.Scene.MyScene do
     use SnapFramework.Scene
 
-    use_effect :dropdown_value, :on_dropdown_value_change
-
     def setup(scene) do
-      Scenic.PubSub.subscribe(:pubsub_service)
-
-      assign(scene, new_assign: true)
+      assign(scene,
+        dropdown_opts: [{"Option 1", "Option 1"}, {"Option 2", "Option 2"}, {"Option 3", "Option 3"}],
+        dropdown_value: "Option 1"
+      )
     end
 
     def mounted(scene) do
-      # do something after graph has been initialized.
+      send_event(scene, :dropdown, :set_value, "Option 2")
+    end
+
+    def render(assigns) do
+      ~G"""
+      <%= graph font_size: 20 %>
+
+      <%= primitive Scenic.Primitive.Text,
+          "selected value #{@dropdown_value}",
+          id: :dropdown_value_text,
+          translate: {20, 80}
+      %>
+
+      <%= component Scenic.Component.Input.Dropdown, {
+              @dropdown_opts,
+              @dropdown_value
+          },
+          id: :dropdown,
+          translate: {20, 20}
+      %>
+      """
     end
 
     def process_event({:value_changed, :dropdown, value}, _, scene) do

@@ -4,15 +4,21 @@ defmodule SnapFramework.Scene do
   @moduledoc ~S"""
   ## Overview
 
-  SnapFramework.Scene aims to make creating Scenic scenes easier and comes with a lot of convenient features.
-  See Scenic.Scene docs for more on scenes.
+  SnapFramework.Scene aims to make creating Scenic scenes and components easier as well as add more power overall to graph updates and nesting components,
+  and comes with a lot of convenient features. See Scenic.Scene docs for more on scenes.
 
-  In order to use this module you will first need a template all you need to do is use it in your scene module and add a render function.
-  Example below
+  Creating a scene is pretty straight forward.
 
   ``` elixir
   defmodule Example.Scene.MyScene do
     use SnapFramework.Scene
+
+    def setup(scene) do
+      assign(scene,
+        dropdown_opts: [{"Option 1", "Option 1"}, {"Option 2", "Option 2"}, {"Option 3", "Option 3"}],
+        dropdown_value: "Option 1"
+      )
+    end
 
     def render(assigns) do
       ~G\"""
@@ -33,16 +39,22 @@ defmodule SnapFramework.Scene do
       %>
       \"""
     end
+
+    def process_event({:value_changed, :dropdown, value}, _, scene) do
+      {:noreply, assign(scene, dropdown_value: value)}
+    end
   end
   ```
 
   Having just the above should be enough to get the scene rendering.
-  Whenever you change one of the variables used in the template SnapFramework will automatically rebuild the graph and push it to the ViewPort.
+  Whenever you change one of the variables used in the template SnapFramework will automatically rebuild the graph and push it.
 
   ## Setup and Mount Callbacks
 
   If you need to do some special setup, like request input, subscribe to a PubSub service, or add some runtime assigns. You can do that in the setup callback.
   It gives you the scene struct and should return a scene struct.
+
+  These callbacks do not trigger redraws.
 
   The setup callback runs before the graph is initialized. So any added or modified assigns will be included in the template.
   The graph however is not included on the scene yet.
@@ -51,12 +63,31 @@ defmodule SnapFramework.Scene do
   defmodule Example.Scene.MyScene do
     use SnapFramework.Scene
 
-    use_effect :dropdown_value, :on_dropdown_value_change
-
     def setup(scene) do
-      Scenic.PubSub.subscribe(:pubsub_service)
+      assign(scene,
+        dropdown_opts: [{"Option 1", "Option 1"}, {"Option 2", "Option 2"}, {"Option 3", "Option 3"}],
+        dropdown_value: "Option 1"
+      )
+    end
 
-      assign(scene, new_assign: true)
+    def render(assigns) do
+      ~G\"""
+      <%= graph font_size: 20 %>
+
+      <%= primitive Scenic.Primitive.Text,
+          "selected value #{@dropdown_value}",
+          id: :dropdown_value_text,
+          translate: {20, 80}
+      %>
+
+      <%= component Scenic.Component.Input.Dropdown, {
+              @dropdown_opts,
+              @dropdown_value
+          },
+          id: :dropdown,
+          translate: {20, 20}
+      %>
+      \"""
     end
 
     def process_event({:value_changed, :dropdown, value}, _, scene) do
@@ -74,16 +105,35 @@ defmodule SnapFramework.Scene do
   defmodule Example.Scene.MyScene do
     use SnapFramework.Scene
 
-    use_effect :dropdown_value, :on_dropdown_value_change
-
     def setup(scene) do
-      Scenic.PubSub.subscribe(:pubsub_service)
-
-      assign(scene, new_assign: true)
+      assign(scene,
+        dropdown_opts: [{"Option 1", "Option 1"}, {"Option 2", "Option 2"}, {"Option 3", "Option 3"}],
+        dropdown_value: "Option 1"
+      )
     end
 
     def mounted(scene) do
-      # do something after graph has been initialized.
+      send_event(scene, :dropdown, :set_value, "Option 2")
+    end
+
+    def render(assigns) do
+      ~G\"""
+      <%= graph font_size: 20 %>
+
+      <%= primitive Scenic.Primitive.Text,
+          "selected value #{@dropdown_value}",
+          id: :dropdown_value_text,
+          translate: {20, 80}
+      %>
+
+      <%= component Scenic.Component.Input.Dropdown, {
+              @dropdown_opts,
+              @dropdown_value
+          },
+          id: :dropdown,
+          translate: {20, 20}
+      %>
+      \"""
     end
 
     def process_event({:value_changed, :dropdown, value}, _, scene) do

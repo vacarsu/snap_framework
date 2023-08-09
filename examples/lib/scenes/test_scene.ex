@@ -1,53 +1,43 @@
 defmodule Examples.Scene.TestScene do
-  require Logger
-  use SnapFramework.Scene, opts: []
+  use SnapFramework.Scene
 
-  @impl true
   def setup(scene) do
-    scene
-    |> assign(
+    assign(scene,
       dropdown_opts: [
-        {"Dashboard", :dashboard},
-        {"Controls", :controls},
-        {"Primitives", :primitives}
+        {"Option 1", "Option 1"},
+        {"Option 2", "Option 2"},
+        {"Option 3", "Option 3"}
       ],
-      button_icon: :button_icons,
-      button_data: {100, 50, 5},
-      test_clicked: false,
-      dropdown_value: :dashboard,
-      button_text: "test",
-      show: true,
-      buttons: ["test", "test_1", "test_2"]
+      dropdown_value: "Option 1"
     )
   end
 
-  @impl true
-  def process_info({test, _}, scene) do
-    IO.inspect("info")
-    {:noreply, scene |> assign(button_text: "test")}
+  def mount(scene) do
+    update_child(scene, :dropdown, {scene.assigns.dropdown_opts, "Option 2"})
+    scene
   end
 
-  @impl true
-  def process_event({:click, :btn}, _, scene) do
-    {:noreply, assign(scene, button_text: "clicked")}
-  end
-
-  def process_event(_, _, scene) do
-    {:noreply, scene}
-  end
-
-  @impl true
   def render(assigns) do
     ~G"""
     <%= graph font_size: 20 %>
 
-    <%= grid item_width: 200, item_height: 100, padding: 5, gutter: 5, rows: 10, cols: 10 do %>
-        <%= row do %>
-          <%= component Examples.Component.Button, @button_data, id: :btn do %>
-            <%= primitive Scenic.Primitive.Text, @button_text %>
-          <% end %>
-        <% end %>
-    <% end %>
+    <%= primitive Scenic.Primitive.Text,
+        "selected value #{@dropdown_value}",
+        id: :dropdown_value_text,
+        translate: {20, 80}
+    %>
+
+    <%= component Scenic.Component.Input.Dropdown, {
+            @dropdown_opts,
+            @dropdown_value
+        },
+        id: :dropdown,
+        translate: {20, 20}
+    %>
     """
+  end
+
+  def process_event({:value_changed, :dropdown, value}, _, scene) do
+    {:noreply, assign(scene, dropdown_value: value)}
   end
 end
