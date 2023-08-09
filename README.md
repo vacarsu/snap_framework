@@ -118,8 +118,9 @@ Inital setup is the same as any Scenic app.
       )
     end
 
-    def mounted(scene) do
-      send_event(scene, :dropdown, :set_value, "Option 2")
+    def mount(scene) do
+      update_child(scene, :dropdown, {scene.assigns.dropdown_opts, "Option 2"})
+      scene
     end
 
     def render(assigns) do
