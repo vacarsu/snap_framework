@@ -1,7 +1,7 @@
 defmodule SnapFramework.MixProject do
   use Mix.Project
 
-  @version "0.1.0-beta"
+  @version "0.2.0-beta"
   @github "https://github.com/vacarsu/snap_framework"
 
   def project do
@@ -9,15 +9,19 @@ defmodule SnapFramework.MixProject do
       app: :snap_framework,
       name: "SnapFramework",
       version: @version,
-      elixir: "~> 1.12",
+      elixir: "~> 1.13",
       package: package(),
       description: description(),
       docs: docs(),
       build_embedded: false,
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      elixirc_paths: elixirc_paths(Mix.env())
     ]
   end
+
+  # defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 
   # Run "mix help compile.app" to learn about applications.
   def application do
@@ -31,7 +35,7 @@ defmodule SnapFramework.MixProject do
   defp deps do
     [
       {:ex_doc, "~> 0.24", only: :dev, runtime: false},
-      {:scenic, "~> 0.11.0-beta.0"},
+      {:scenic, "0.11.1"},
       {:truetype_metrics, "~> 0.5"},
       {:dialyxir, "~> 1.1", only: :dev, runtime: false},
       {:ring_logger, "~> 0.6"},

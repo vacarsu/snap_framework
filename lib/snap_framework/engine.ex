@@ -72,31 +72,21 @@ defmodule SnapFramework.Engine do
   def encode_to_iodata!({:safe, body}), do: body
   def encode_to_iodata!(body) when is_binary(body), do: body
 
-  def compile(path, assigns, info, _env) do
-    quoted = EEx.compile_file(path, info)
-    {result, _binding} = Code.eval_quoted(quoted, assigns)
-    result
-  end
-
-  def compile_string(string, assigns, info, env) do
-    quoted = EEx.compile_string(string, info)
-    {result, _binding} = Code.eval_quoted(quoted, assigns, env)
-    result
-  end
-
   @doc false
   def init(opts) do
+    Module.register_attribute(opts[:caller].module, :assigns_to_track, accumulate: false)
+    Module.put_attribute(opts[:caller].module, :assigns_to_track, [])
+
     %{
+      caller: opts[:caller],
       iodata: [],
       dynamic: [],
-      vars_count: 0,
-      assigns: opts[:assigns] || []
+      vars_count: 0
     }
   end
 
   @doc false
   def handle_begin(state) do
-    Macro.var(:assigns, __MODULE__)
     %{state | iodata: [], dynamic: []}
   end
 
@@ -126,7 +116,7 @@ defmodule SnapFramework.Engine do
 
   @doc false
   def handle_expr(state, "=", ast) do
-    ast = traverse(ast, state.assigns)
+    ast = traverse(ast, state)
     %{iodata: iodata, dynamic: dynamic, vars_count: vars_count} = state
     var = Macro.var(:"arg#{vars_count}", __MODULE__)
     ast = quote do: unquote(var) = unquote(ast)
@@ -134,7 +124,7 @@ defmodule SnapFramework.Engine do
   end
 
   def handle_expr(state, "", ast) do
-    ast = traverse(ast, state.assigns)
+    ast = traverse(ast, state)
     %{dynamic: dynamic} = state
     %{state | dynamic: [ast | dynamic]}
   end
@@ -145,16 +135,14 @@ defmodule SnapFramework.Engine do
 
   ## Traversal
 
-  defp traverse(expr, assigns) do
+  defp traverse(expr, state) do
     expr
-    |> Macro.prewalk(&SnapFramework.Parser.Assigns.run(&1, assigns))
-    # |> Macro.prewalk(&SnapFramework.Parser.Enumeration.run/1)
-    |> Macro.prewalk(&SnapFramework.Parser.Layout.run/1)
-    |> Macro.prewalk(&SnapFramework.Parser.Graph.run/1)
-    |> Macro.prewalk(&SnapFramework.Parser.Component.run/1)
-    |> Macro.prewalk(&SnapFramework.Parser.Primitive.run/1)
-
-    # |> Macro.prewalk(&SnapFramework.Parser.Outlet.run(&1, assigns))
+    |> Macro.prewalk(&SnapFramework.Engine.Parser.Assigns.run(&1, state))
+    |> Macro.prewalk(&SnapFramework.Engine.Parser.Grid.run/1)
+    |> Macro.prewalk(&SnapFramework.Engine.Parser.Layout.run/1)
+    |> Macro.prewalk(&SnapFramework.Engine.Parser.Graph.run/1)
+    |> Macro.prewalk(&SnapFramework.Engine.Parser.Component.run/1)
+    |> Macro.prewalk(&SnapFramework.Engine.Parser.Primitive.run/1)
   end
 
   @doc false

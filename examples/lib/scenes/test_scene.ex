@@ -1,59 +1,42 @@
 defmodule Examples.Scene.TestScene do
-  import Scenic.Components, only: [dropdown: 3]
-  import Scenic.Primitives, only: [text: 3]
-  import Examples.Component.Button, only: [button: 3]
-  import Examples.Component.ButtonList, only: [button_list: 3]
-  alias Scenic.Component.Input.Dropdown
-  alias Scenic.Primitive.Text
-  require Logger
+  use SnapFramework.Scene
 
-  use SnapFramework.Scene,
-    template: "lib/scenes/test_scene.eex",
-    controller: Examples.Scene.TestSceneController,
-    assigns: [
+  def setup(scene) do
+    assign(scene,
       dropdown_opts: [
-        {"Dashboard", :dashboard},
-        {"Controls", :controls},
-        {"Primitives", :primitives}
+        {"Option 1", "Option 1"},
+        {"Option 2", "Option 2"},
+        {"Option 3", "Option 3"}
       ],
-      button_icon: :button_icons,
-      test_clicked: false,
-      dropdown_value: :dashboard,
-      button_text: "test",
-      text_value: "selected value <%= @state.dropdown_value %>",
-      buttons: ["test", "test_1", "test_2"]
-    ]
+      dropdown_value: "Option 1"
+    )
+  end
 
-  # watch [:dropdown_value]
-
-  use_effect([assigns: [text_value: :any, button_text: :any]],
-    run: [:on_text_change]
-  )
-
-  use_effect([assigns: [dropdown_value: :primitives]],
-    run: [:on_dropdown_value_change]
-  )
-
-  # use_effect [on_click: [:test_btn]], :noreply, [
-  #   set: [button_text: "button clicked", text_value: "button clicked"],
-  # ]
-
-  def mounted(scene) do
-    Logger.debug("callback mounted called")
-    Logger.debug(inspect(scene.assigns.graph))
+  def mount(scene) do
+    update_child(scene, :dropdown, {scene.assigns.dropdown_opts, "Option 2"})
     scene
   end
 
-  def process_event({:value_changed, :dropdown, value}, _, scene) do
-    Logger.debug("changed")
-    # {:ok, [btn_pid]} = child(scene, :test_btn)
-    # Scenic.Component.put(btn_pid, "selected value #{value}")
-    {:noreply,
-     assign(scene, dropdown_value: value, button_text: "hi", text_value: "selected value #{value}")}
+  def render(assigns) do
+    ~G"""
+    <%= graph font_size: 20 %>
+
+    <%= primitive Scenic.Primitive.Text,
+        "selected value #{@dropdown_value}",
+        id: :dropdown_value_text,
+        translate: {20, 80}
+    %>
+
+    <%= component Scenic.Component.Input.Dropdown, {
+        @dropdown_opts,
+        @dropdown_value
+      },
+      id: :dropdown
+    %>
+    """
   end
 
-  def process_event(_, _, scene) do
-    Logger.debug("working")
-    {:noreply, scene}
+  def process_event({:value_changed, :dropdown, value}, _, scene) do
+    {:noreply, assign(scene, dropdown_value: value)}
   end
 end

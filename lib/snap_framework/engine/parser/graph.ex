@@ -1,4 +1,4 @@
-defmodule SnapFramework.Parser.Graph do
+defmodule SnapFramework.Engine.Parser.Graph do
   require Logger
 
   @moduledoc false
@@ -8,7 +8,7 @@ defmodule SnapFramework.Parser.Graph do
     |> parse()
   end
 
-  def parse({:graph, meta, [opts]}) do
+  defp parse({:graph, meta, [opts]}) do
     quote line: meta[:line] || 0 do
       [
         type: :graph,
@@ -17,7 +17,7 @@ defmodule SnapFramework.Parser.Graph do
     end
   end
 
-  def parse({:graph, meta, []}) do
+  defp parse({:graph, meta, []}) do
     quote line: meta[:line] || 0 do
       [
         type: :graph,
@@ -26,5 +26,5 @@ defmodule SnapFramework.Parser.Graph do
     end
   end
 
-  def parse(ast), do: ast
+  defp parse(ast), do: ast
 end

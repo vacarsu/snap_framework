@@ -1,60 +1,47 @@
 defmodule SnapFramework.Component do
-  alias Scenic.Graph
-  alias Scenic.Primitive
-  require SnapFramework.Macros
-  require Logger
-
   @moduledoc """
   ## Overview
 
-  SnapFramework.Component is nearly identical to a Scene. The main different is the addition of the defcomponent macro,
-  as well as the addition of the scenic opts key.
-  defcomponent build out your scenic validate function and helper functions, automatically so you don't have to.
+  SnapFramework.Component is nearly identical to a Scene. The main difference is it automatically generates some helper functions and validation functions based
+  on the options you add when ```use``` is called.
 
   ``` elixir
   defmodule Example.Component.MyComponent do
     use SnapFramework.Component,
-      template: "lib/scenes/my_component.eex",
-      controller: :none,
-      assigns: []
-
-    defcomponent :my_component, :tuple
+      name: :my_component,
+      type: :tuple
   end
   ```
 
-  The above example defines a component that takes in a tuple for data. and build your helper function defined as ```my_component/3```
-
-  ## Templates
+  The above example defines a component that takes in a tuple for data and builds your helper function defined as ```my_component/3```
 
   Component templates also have an additional feature that primitives or scene templates do not have. You can inject children into them.
   Lets write a basic icon button component that takes an icon child.
 
   ``` elixir
-  # template
-  <%= graph font_size: 20 %>
-
-  <%= primitive Scenic.Primitive.Circle,
-      15,
-      id: :bg,
-      translate: {23, 23}
-  %>
-
-  @children
-
-  # component module
   defmodule Example.Component.IconButton do
     use SnapFramework.Component,
-      name: :icon_button,
-      template: "lib/icons/icon_button/icon_button.eex",
-      controller: :none,
-      assigns: [],
-      opts: []
+      name: :icon_button
 
-    defcomponent :icon_button, :any
+    def render(assigns) do
+      ~G\"""
+      <%= graph font_size: 20 %>
+
+      <%= primitive Scenic.Primitive.Circle,
+          15,
+          id: :bg,
+          translate: {23, 23}
+      %>
+
+      @children
+      \"""
+    end
   end
   ```
 
   Now lets see how to use this component with children in a scene. This assumes we've already made an icon component.
+  As you can see we are nesting a component within another component. The compiler will pass any nested components onto the scene of the parent
+  component as children.
 
   ``` elixir
     <%= graph font_size: 20 %>
@@ -70,14 +57,14 @@ defmodule SnapFramework.Component do
     <% end %>
   ```
 
+  Additionally because children are assigns in the engine whenever you change them at the top level, the graphs all the way down your component tree will be update.
+
   That's all there is to putting children in components!
   """
 
   @opts_schema [
-    name: [required: false, type: :atom],
-    template: [required: true, type: :string],
-    controller: [required: true, type: :any],
-    assigns: [required: true, type: :any],
+    name: [required: true, type: :atom],
+    type: [required: false, type: :atom, default: nil],
     opts: [required: false, type: :any]
   ]
 
@@ -85,22 +72,10 @@ defmodule SnapFramework.Component do
     case NimbleOptions.validate(opts, @opts_schema) do
       {:ok, opts} ->
         quote do
-          use SnapFramework.Scene,
-            template: unquote(opts[:template]),
-            controller: unquote(opts[:controller]),
-            assigns: unquote(opts[:assigns]),
-            opts: unquote(opts[:opts]),
-            type: :component
-
-          import SnapFramework.Component
-          alias Scenic.Primitives
-          require SnapFramework.Macros
-          require EEx
-          require Logger
-
-          Module.register_attribute(__MODULE__, :assigns, persist: true)
-
-          Module.register_attribute(__MODULE__, :preload, persist: true)
+          unquote(prelude())
+          unquote(deps())
+          unquote(defs())
+          unquote(defcmp(opts))
         end
 
       {:error, error} ->
@@ -108,7 +83,30 @@ defmodule SnapFramework.Component do
     end
   end
 
-  defmacro defcomponent(name, data_type) do
+  defp prelude() do
+    quote do
+      use SnapFramework.Scene, type: :component
+    end
+  end
+
+  defp deps() do
+    quote do
+      alias Scenic.Graph
+      import SnapFramework.Component
+    end
+  end
+
+  defp defs() do
+    quote do
+      Module.register_attribute(__MODULE__, :assigns, persist: true)
+      Module.register_attribute(__MODULE__, :preload, persist: true)
+    end
+  end
+
+  defp defcmp(opts) do
+    name = opts[:name]
+    data_type = opts[:type]
+
     quote do
       case unquote(data_type) do
         :string ->
@@ -132,11 +130,14 @@ defmodule SnapFramework.Component do
         :any ->
           def validate(data), do: {:ok, data}
 
+        nil ->
+          def validate(data) when is_nil(data), do: {:ok, data}
+
         _ ->
-          def validate(data), do: {:ok, data}
+          nil
       end
 
-      if unquote(data_type) != :any do
+      if unquote(data_type) != :any and unquote(data_type) != :custom do
         def validate(data) do
           {
             :error,
@@ -144,13 +145,14 @@ defmodule SnapFramework.Component do
             #{IO.ANSI.red()}Invalid #{__MODULE__} specification
             Received: #{inspect(data)}
             #{IO.ANSI.yellow()}
-            The data for a #{__MODULE__} is just the #{inspect(unquote(data_type))} string to be displayed in the button.#{IO.ANSI.default_color()}
+            The data for #{__MODULE__} must be a #{inspect(unquote(data_type))}.#{IO.ANSI.default_color()}
             """
           }
         end
       end
 
       def unquote(name)(graph, data, options \\ [])
+
       def unquote(name)(%Graph{} = g, data, options) do
         add_to_graph(g, data, options)
       end
@@ -166,7 +168,7 @@ defmodule SnapFramework.Component do
             {:error, msg} -> raise msg
           end
 
-        Primitive.put(p, {__MODULE__, data, id}, options)
+        Scenic.Primitive.put(p, {__MODULE__, data, id}, options)
       end
 
       def unquote(name)(%Scenic.Primitive{module: mod} = p, data, opts) do
@@ -176,7 +178,7 @@ defmodule SnapFramework.Component do
             {:error, error} -> raise Exception.message(error)
           end
 
-        Primitive.put(p, data, opts)
+        Scenic.Primitive.put(p, data, opts)
       end
     end
   end

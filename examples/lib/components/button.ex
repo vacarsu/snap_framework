@@ -1,38 +1,34 @@
 defmodule Examples.Component.Button do
-  import Scenic.Primitives, only: [text: 3, rounded_rectangle: 3]
+  require Logger
+  use SnapFramework.Component, name: :button, type: :tuple, opts: []
 
-  use SnapFramework.Component,
-    template: "lib/components/button.eex",
-    controller: Examples.Component.ButtonController,
-    assigns: [icon: "test", text: "test"]
-
-  defcomponent(:button, :any)
-
-  # watch [:data, :opts]
-
-  use_effect([assigns: [text: :any]],
-    run: [:on_data_change]
-  )
-
-  def setup(scene) do
-    assign(scene, icon: scene.assigns.data, text: scene.assigns.data)
+  @impl true
+  def mount(scene) do
+    send_parent(scene, {:test, :test})
+    scene
   end
 
-  def bounds(data, opts) do
-    {0, 0, 100, 50}
+  @impl true
+  def process_event({:click, :btn}, _, scene) do
+    {:noreply, assign(scene, button_text: "clicked")}
   end
 
-  def process_input({:cursor_button, {0, :release, _, _}}, id, scene) do
-    send_parent_event(scene, {:click, scene.assigns.opts[:id]})
+  def process_event(_, _, scene) do
     {:noreply, scene}
   end
 
-  def process_input(_, _, scene) do
-    {:noreply, scene}
-  end
+  @impl true
+  def render(assigns) do
+    ~G"""
+    <%= graph font_size: 20 %>
 
-  def process_info(:test, scene) do
-    Logger.debug("working")
-    {:noreply, scene}
+    <%= primitive Scenic.Primitive.RoundedRectangle,
+        @data,
+        translate: {0, 0},
+        id: :bg
+    %>
+
+    <%= @children %>
+    """
   end
 end
