@@ -7,7 +7,7 @@ defmodule SnapFramework.Engine.Parser.Grid do
   end
 
   defp parse({:grid, meta, [opts, [do: {:__block__, [], block}]]}) do
-    Logger.debug(inspect(block, pretty: true))
+    # Logger.debug(inspect(block, pretty: true))
 
     children =
       block
@@ -86,7 +86,7 @@ defmodule SnapFramework.Engine.Parser.Grid do
   end
 
   defp build_grid_list(_ast, acc) do
-    Logger.warn("Only row and col may be used within grid. Any other elements will be ignored.")
+    # Logger.warn("Only row and col may be used within grid. Any other elements will be ignored.")
     acc
   end
 

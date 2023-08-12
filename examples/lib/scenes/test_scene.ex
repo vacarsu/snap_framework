@@ -28,11 +28,10 @@ defmodule Examples.Scene.TestScene do
     %>
 
     <%= component Scenic.Component.Input.Dropdown, {
-            @dropdown_opts,
-            @dropdown_value
-        },
-        id: :dropdown,
-        translate: {20, 20}
+        @dropdown_opts,
+        @dropdown_value
+      },
+      id: :dropdown
     %>
     """
   end
