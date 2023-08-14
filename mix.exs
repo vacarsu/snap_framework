@@ -36,7 +36,6 @@ defmodule SnapFramework.MixProject do
     [
       {:ex_doc, "~> 0.24", only: :dev, runtime: false},
       {:scenic, "0.11.1"},
-      {:truetype_metrics, "~> 0.5"},
       {:dialyxir, "~> 1.1", only: :dev, runtime: false},
       {:ring_logger, "~> 0.6"},
       {:map_diff, "~> 1.3.4"}
