@@ -1,7 +1,7 @@
 defmodule SnapFramework.MixProject do
   use Mix.Project
 
-  @version "0.2.0-beta"
+  @version "0.2.0-beta.1"
   @github "https://github.com/vacarsu/snap_framework"
 
   def project do
