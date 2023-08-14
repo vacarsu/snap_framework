@@ -265,20 +265,19 @@ defmodule SnapFramework.Scene do
 
       defp handle_changes(old_scene, new_scene) do
         diff = MapDiff.diff(old_scene.assigns, new_scene.assigns)
-
         draw(new_scene, diff)
       end
 
       defp draw(scene, %{changed: :map_change} = diff) do
         should_rerender? =
-          Enum.reduce(diff.added, false, fn {key, value}, acc ->
-            key in @assigns_to_track
+          Enum.reduce(diff.added, [], fn {key, value}, acc ->
+            [key in @assigns_to_track | acc]
           end)
 
-        if should_rerender?, do: draw(scene, scene.assigns), else: scene
+        if true in should_rerender?, do: draw(scene, scene.assigns), else: scene
       end
 
-      defp draw(scene, %{changed: :equal}) do
+      defp draw(scene, %{changed: :equal} = diff) do
         scene
       end
 
@@ -306,6 +305,7 @@ defmodule SnapFramework.Scene do
              %{
                module: Scenic.Primitive.Component,
                data: {new_module, data, _scene_id},
+               opts: opts,
                id: new_id
              } = prim,
              scene
@@ -317,8 +317,16 @@ defmodule SnapFramework.Scene do
 
         old_prim =
           Enum.find(old_prims, fn
-            %{module: Scenic.Primitive.Component, data: {old_module, _, scene_id}} = old_prim ->
-              old_module == new_module
+            %{
+              module: Scenic.Primitive.Component,
+              data: {old_module, old_data, scene_id},
+              opts: old_opts
+            } = old_prim ->
+              if old_module == new_module do
+                true
+              else
+                false
+              end
 
             _ ->
               false
