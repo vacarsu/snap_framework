@@ -23,7 +23,6 @@ defmodule Examples.MixProject do
   defp deps do
     [
       {:scenic_driver_local, "~> 0.11.0"},
-      {:truetype_metrics, "~> 0.5"},
       {:ex_image_info, "~> 0.2.4", runtime: false},
       {:dialyxir, "~> 1.1", only: :dev, runtime: false},
       {:ring_logger, "~> 0.6"},
