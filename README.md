@@ -3,7 +3,7 @@
 Add Snap to your application.
 
 ``` elixir
-{:snap_framework, "~> 0.2.0-beta.1"}
+{:snap_framework, "~> 0.2.0-beta.2"}
 ```
 
 Inital setup is the same as any Scenic app.
