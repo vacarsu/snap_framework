@@ -22,17 +22,15 @@ defmodule SnapFramework.Engine.Builder.Layout do
         padding: padding,
         width: width,
         height: height,
-        translate: translate,
+        translate: {x, y} = translate,
         children: children
       ) do
     layout = %Layout{
-      last_x: 0,
-      last_y: 0,
+      last_x: x,
+      last_y: y,
       padding: padding,
       width: width,
       height: height,
-      largest_width: 0,
-      largest_height: 0,
       graph: graph,
       translate: translate
     }
@@ -88,17 +86,20 @@ defmodule SnapFramework.Engine.Builder.Layout do
 
   defp translate_and_render(layout, module, data, opts) do
     {l, t, r, b} = get_bounds(module, data, opts)
+    IO.inspect("l: #{l}, t: #{t}, r: #{r}, b: #{b}")
     {tx, ty} = layout.translate
+    total_x = r + layout.last_x + layout.padding
 
     layout =
-      case fits_in_x?(r + layout.last_x + layout.padding, layout.width) do
+      case fits_in_x?(total_x, layout.width) do
         true ->
           x = l + layout.last_x + layout.padding + tx
-          y = layout.last_y + ty
+          y = t + layout.last_y + layout.padding + ty
 
           %Layout{
             layout
-            | last_x: r + layout.last_x + layout.padding,
+            | last_x: x,
+              last_y: y,
               graph:
                 module.add_to_graph(layout.graph, data, Keyword.merge(opts, translate: {x, y}))
           }
@@ -106,11 +107,12 @@ defmodule SnapFramework.Engine.Builder.Layout do
         false ->
           x = l + tx + layout.padding
           y = t + layout.last_y + layout.largest_height + layout.padding
+          IO.inspect("x: #{x}, y: #{y}")
 
           %Layout{
             layout
-            | last_x: l + tx + r + layout.padding,
-              last_y: t + layout.last_y + layout.largest_height + layout.padding,
+            | last_x: x,
+              last_y: y,
               graph:
                 module.add_to_graph(layout.graph, data, Keyword.merge(opts, translate: {x, y}))
           }
