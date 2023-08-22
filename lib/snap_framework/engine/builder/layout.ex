@@ -86,7 +86,6 @@ defmodule SnapFramework.Engine.Builder.Layout do
 
   defp translate_and_render(layout, module, data, opts) do
     {l, t, r, b} = get_bounds(module, data, opts)
-    IO.inspect("l: #{l}, t: #{t}, r: #{r}, b: #{b}")
     {tx, ty} = layout.translate
     total_x = r + layout.last_x + layout.padding
 
@@ -107,7 +106,6 @@ defmodule SnapFramework.Engine.Builder.Layout do
         false ->
           x = l + tx + layout.padding
           y = t + layout.last_y + layout.largest_height + layout.padding
-          IO.inspect("x: #{x}, y: #{y}")
 
           %Layout{
             layout
