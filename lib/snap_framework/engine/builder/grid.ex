@@ -125,10 +125,10 @@ defmodule SnapFramework.Engine.Builder.Grid do
            graph: graph,
            item_width: item_width,
            max_cols: max_cols,
-           max_rows: max_rows,
+           max_rows: _max_rows,
            curr_padding: curr_padding,
            curr_col: curr_col,
-           curr_row: curr_row
+           curr_row: _curr_row
          } = grid,
          module,
          data,
@@ -224,11 +224,11 @@ defmodule SnapFramework.Engine.Builder.Grid do
            next_x: next_x,
            next_y: next_y,
            graph: graph,
-           max_cols: max_cols,
+           max_cols: _max_cols,
            max_rows: max_rows,
            curr_padding: curr_padding,
            curr_row: curr_row,
-           curr_col: curr_col,
+           curr_col: _curr_col,
            item_height: item_height
          } = grid,
          module,
@@ -254,7 +254,7 @@ defmodule SnapFramework.Engine.Builder.Grid do
            next_y: next_y,
            graph: graph,
            item_width: item_width,
-           item_height: item_height,
+           item_height: _item_height,
            max_cols: max_cols,
            max_rows: max_rows,
            curr_padding: curr_padding,
@@ -316,7 +316,7 @@ defmodule SnapFramework.Engine.Builder.Grid do
   end
 
   defp overflow_error(module) do
-    Logger.warn("""
+    Logger.warning("""
     #{IO.ANSI.red()}Grid overflowed
     #{IO.ANSI.yellow()}
     Could not fit module #{inspect(module)} in grid.
