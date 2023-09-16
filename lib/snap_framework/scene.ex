@@ -223,7 +223,7 @@ defmodule SnapFramework.Scene do
   """
   @callback mount(Scene.t()) :: Scene.t()
 
-  @callback render(assign :: map) :: String.t()
+  @callback render(assign :: map) :: list()
 
   @optional_callbacks process_call: 3,
                       process_info: 2,
@@ -240,7 +240,8 @@ defmodule SnapFramework.Scene do
 
   @opts_schema [
     opts: [required: false, type: :any, default: []],
-    type: [required: false, type: :atom, default: :scene]
+    type: [required: false, type: :atom, default: :scene],
+    services: [required: false, type: :any, default: []]
   ]
 
   defmacro __before_compile__(_env) do
@@ -256,93 +257,55 @@ defmodule SnapFramework.Scene do
             opts: opts,
             children: opts[:children] || []
           )
+          |> subscribe_to_services(@services)
           |> setup()
-          |> (&draw(&1, &1.assigns)).()
+          |> draw(@services)
           |> mount()
 
         {:ok, scene}
       end
 
-      defp handle_changes(old_scene, new_scene) do
-        diff = MapDiff.diff(old_scene.assigns, new_scene.assigns)
-        draw(new_scene, diff)
+      defp draw(scene, nil) do
+        SnapFramework.Scene.Renderer.draw(scene)
       end
 
-      defp draw(scene, %{changed: :map_change} = diff) do
-        should_rerender? =
-          Enum.reduce(diff.added, [], fn {key, value}, acc ->
-            [key in @assigns_to_track | acc]
-          end)
+      defp draw(scene, services) do
+        additional_assigns = fetch_services_data(services)
 
-        if true in should_rerender?, do: draw(scene, scene.assigns), else: scene
+        SnapFramework.Scene.Renderer.draw(scene, additional_assigns)
       end
 
-      defp draw(scene, %{changed: :equal} = diff) do
+      defp redraw(old_scene, new_scene, nil) do
+        SnapFramework.Scene.Renderer.maybe_render(old_scene, new_scene, @assigns_to_track)
+      end
+
+      defp redraw(old_scene, new_scene, services) do
+        additional_assigns = fetch_services_data(services)
+
+        SnapFramework.Scene.Renderer.maybe_render(
+          old_scene,
+          new_scene,
+          additional_assigns,
+          @assigns_to_track
+        )
+      end
+
+      defp subscribe_to_services(scene, nil) do
         scene
       end
 
-      defp draw(scene, assigns) do
-        ast = apply(scene.assigns.module, :render, [scene.assigns])
-
-        graph =
-          ast
-          |> SnapFramework.Engine.Compiler.Scrubber.scrub()
-          |> SnapFramework.Engine.Compiler.compile_graph()
-
-        graph =
-          if is_nil(Map.get(scene.assigns, :graph)) do
-            graph
-          else
-            Scenic.Graph.map(graph, &map_graph_ids(&1, scene))
-          end
+      defp subscribe_to_services(scene, services) do
+        Enum.each(services, fn service ->
+          Scenic.PubSub.subscribe(service)
+        end)
 
         scene
-        |> assign(graph: graph)
-        |> push_graph(graph)
       end
 
-      defp map_graph_ids(
-             %{
-               module: Scenic.Primitive.Component,
-               data: {new_module, data, _scene_id},
-               opts: opts,
-               id: new_id
-             } = prim,
-             scene
-           ) do
-        old_prims =
-          Scenic.Graph.find(scene.assigns.graph, fn id ->
-            id == new_id
-          end)
-
-        old_prim =
-          Enum.find(old_prims, fn
-            %{
-              module: Scenic.Primitive.Component,
-              data: {old_module, old_data, scene_id},
-              opts: old_opts
-            } = old_prim ->
-              if old_module == new_module do
-                true
-              else
-                false
-              end
-
-            _ ->
-              false
-          end)
-
-        if is_nil(old_prim) do
-          prim
-        else
-          %{module: Scenic.Primitive.Component, data: {_old_module, _data, scene_id}} = old_prim
-
-          %{prim | data: {new_module, data, scene_id}}
-        end
-      end
-
-      defp map_graph_ids(prim, scene) do
-        prim
+      defp fetch_services_data(services) do
+        Enum.reduce(services, %{}, fn service, acc ->
+          Map.merge(acc, service.fetch())
+        end)
       end
     end
   end
@@ -351,6 +314,7 @@ defmodule SnapFramework.Scene do
     case NimbleOptions.validate(opts, @opts_schema) do
       {:ok, opts} ->
         quote do
+          @services unquote(opts[:services])
           unquote(prelude(opts))
           unquote(deps())
           unquote(defs())
@@ -388,7 +352,6 @@ defmodule SnapFramework.Scene do
   defp defs() do
     quote do
       @before_compile SnapFramework.Scene
-
       def setup(scene), do: scene
       def mount(scene), do: scene
       def terminate(_, scene), do: {:noreply, scene}
@@ -428,46 +391,51 @@ defmodule SnapFramework.Scene do
     quote do
       def handle_input(input, id, scene) do
         {response_type, new_scene} = scene.module.process_input(input, id, scene)
-        {response_type, handle_changes(scene, new_scene)}
+
+        {response_type, redraw(scene, new_scene, @services)}
       end
 
-      def handle_info(:mount, scene) do
-        {:noreply, scene}
+      def handle_info({{Scenic.PubSub, :data}, {_, {:state, state}, _}}, scene) do
+        {:noreply, redraw(scene, scene, @services)}
       end
 
       def handle_info(msg, scene) do
         {response_type, new_scene} = scene.module.process_info(msg, scene)
-        {response_type, handle_changes(scene, new_scene)}
+
+        {response_type, redraw(scene, new_scene, @services)}
       end
 
       def handle_cast(msg, scene) do
         {response_type, new_scene} = scene.module.process_cast(msg, scene)
-        {response_type, handle_changes(scene, new_scene)}
+
+        {response_type, redraw(scene, new_scene, @services)}
       end
 
       def handle_call(msg, from, scene) do
         {response_type, res, new_scene} = scene.module.process_call(msg, from, scene)
-        {response_type, res, handle_changes(scene, new_scene)}
+
+        {response_type, res, redraw(scene, new_scene, @services)}
       end
 
       def handle_update(msg, opts, scene) do
         {response_type, new_scene} = scene.module.process_update(msg, opts, scene)
-        {response_type, handle_changes(scene, new_scene)}
+
+        {response_type, redraw(scene, new_scene, @services)}
       end
 
       def handle_event(event, from_pid, scene) do
         case scene.module.process_event(event, from_pid, scene) do
           {:cont, event, new_scene} ->
-            {:cont, event, handle_changes(scene, new_scene)}
+            {:cont, event, redraw(scene, new_scene, @services)}
 
           {:cont, event, new_scene, opts} ->
-            {:cont, event, handle_changes(scene, new_scene), opts}
+            {:cont, event, redraw(scene, new_scene, @services), opts}
 
           {res, new_scene} ->
-            {res, handle_changes(scene, new_scene)}
+            {res, redraw(scene, new_scene, @services)}
 
           {res, new_scene, opts} ->
-            {res, handle_changes(scene, new_scene), opts}
+            {res, redraw(scene, new_scene, @services), opts}
 
           response ->
             response

@@ -10,7 +10,8 @@ defmodule Examples do
     main_viewport_config = Application.get_env(:examples, :viewport)
     # start the application with the viewport
     children = [
-      {Scenic, [main_viewport_config]}
+      {Scenic, [main_viewport_config]},
+      Examples.Services.Supervisor
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one)

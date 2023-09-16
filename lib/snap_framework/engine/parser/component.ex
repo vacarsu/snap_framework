@@ -13,6 +13,8 @@ defmodule SnapFramework.Engine.Parser.Component do
       block
       |> Enum.reduce([], &build_child_list/2)
 
+    opts = Keyword.put_new(opts, :ref, to_string(:erlang.ref_to_list(:erlang.make_ref())))
+
     quote line: meta[:line] || 0 do
       [
         type: :component,
@@ -41,6 +43,8 @@ defmodule SnapFramework.Engine.Parser.Component do
   end
 
   defp parse({:component, meta, [name, data, opts]}) when is_list(opts) do
+    opts = Keyword.put_new(opts, :ref, to_string(:erlang.ref_to_list(:erlang.make_ref())))
+
     quote line: meta[:line] || 0 do
       [
         type: :component,
@@ -53,6 +57,8 @@ defmodule SnapFramework.Engine.Parser.Component do
   end
 
   defp parse({:component, meta, [name, opts]}) when is_list(opts) do
+    opts = Keyword.put_new(opts, :ref, to_string(:erlang.ref_to_list(:erlang.make_ref())))
+
     quote line: meta[:line] || 0 do
       [
         type: :component,

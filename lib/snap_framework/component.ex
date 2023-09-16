@@ -75,7 +75,7 @@ defmodule SnapFramework.Component do
           unquote(prelude())
           unquote(deps())
           unquote(defs())
-          unquote(defcmp(opts))
+          unquote(helpers(opts))
         end
 
       {:error, error} ->
@@ -99,11 +99,10 @@ defmodule SnapFramework.Component do
   defp defs() do
     quote do
       Module.register_attribute(__MODULE__, :assigns, persist: true)
-      Module.register_attribute(__MODULE__, :preload, persist: true)
     end
   end
 
-  defp defcmp(opts) do
+  defp helpers(opts) do
     name = opts[:name]
     data_type = opts[:type]
 
