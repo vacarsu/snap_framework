@@ -57,15 +57,19 @@ defmodule SnapFramework.Scene.Renderer do
   end
 
   defp assigns_changed?(old_assigns, new_assigns, tracked_assigns) do
-    diff = MapDiff.diff(old_assigns, new_assigns)
+    case MapDiff.diff(old_assigns, new_assigns) do
+      %{added: added} ->
+        Enum.reduce_while(added, false, fn {key, _}, acc ->
+          if key in tracked_assigns do
+            {:halt, true}
+          else
+            {:cont, acc}
+          end
+        end)
 
-    Enum.reduce_while(diff.added, false, fn {key, _}, acc ->
-      if key in tracked_assigns do
-        {:halt, true}
-      else
-        {:cont, acc}
-      end
-    end)
+      _ ->
+        false
+    end
   end
 
   defp map_scene_ids(

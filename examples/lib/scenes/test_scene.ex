@@ -1,23 +1,14 @@
 defmodule Examples.Scene.TestScene do
-  use SnapFramework.Scene, services: [Examples.Services.MyService]
+  use SnapFramework.Scene
 
+  alias Examples.Component.DropdownText
   alias Examples.Services.MyService
 
   def render(assigns) do
     ~G"""
     <%= graph font_size: 20 %>
 
-    <%= primitive Scenic.Primitive.Text,
-        "selected value #{@dropdown_value}",
-        translate: {20, 80}
-    %>
-
-    <%= component Scenic.Component.Input.Dropdown, {
-        @dropdown_opts,
-        @dropdown_value
-      },
-      id: :dropdown
-    %>
+    <%= component DropdownText, nil %>
     """
   end
 

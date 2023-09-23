@@ -90,14 +90,8 @@ defmodule SnapFramework.Service do
   """
 
   @callback setup(any) :: any
-  @callback handle_info(any, any) :: {atom, any}
-  @callback handle_cast(any, any) :: {atom, any}
-  @callback handle_call(any, any, any) :: {atom, any, any}
 
-  @optional_callbacks setup: 1,
-                      handle_info: 2,
-                      handle_cast: 2,
-                      handle_call: 3
+  @optional_callbacks setup: 1
 
   defmacro __using__(_) do
     quote do
@@ -157,10 +151,7 @@ defmodule SnapFramework.Service do
         {:reply, state, state}
       end
 
-      defoverridable setup: 1,
-                     handle_info: 2,
-                     handle_cast: 2,
-                     handle_call: 3
+      defoverridable setup: 1
     end
   end
 end

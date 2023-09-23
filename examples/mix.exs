@@ -26,7 +26,9 @@ defmodule Examples.MixProject do
       {:ex_image_info, "~> 0.2.4", runtime: false},
       {:dialyxir, "~> 1.1", only: :dev, runtime: false},
       {:ring_logger, "~> 0.6"},
-      {:snap_framework, path: Path.relative_to_cwd("..")}
+      {:scenic,
+       git: "https://github.com/vacarsu/scenic.git", branch: "graph_find", override: true},
+      {:snap_framework, path: Path.relative_to_cwd(".."), override: true}
     ]
   end
 end
