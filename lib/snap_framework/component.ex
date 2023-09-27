@@ -65,7 +65,7 @@ defmodule SnapFramework.Component do
   @opts_schema [
     name: [required: true, type: :atom],
     type: [required: false, type: :atom, default: nil],
-    services: [required: false, type: :any, default: []],
+    state: [required: false, type: :any, default: []],
     opts: [required: false, type: :any]
   ]
 
@@ -88,7 +88,7 @@ defmodule SnapFramework.Component do
     quote do
       use SnapFramework.Scene,
         type: :component,
-        services: unquote(opts[:services])
+        state: unquote(opts[:state])
     end
   end
 

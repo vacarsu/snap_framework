@@ -1,4 +1,4 @@
-defmodule Examples.Services.Supervisor do
+defmodule Examples.State.Supervisor do
   use Supervisor
 
   def start_link(_) do
@@ -7,7 +7,7 @@ defmodule Examples.Services.Supervisor do
 
   def init(_) do
     children = [
-      Examples.Services.MyService
+      Examples.State.MyState
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

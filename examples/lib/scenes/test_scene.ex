@@ -2,7 +2,7 @@ defmodule Examples.Scene.TestScene do
   use SnapFramework.Scene
 
   alias Examples.Component.DropdownText
-  alias Examples.Services.MyService
+  alias Examples.State.MyState
 
   def render(assigns) do
     ~G"""
@@ -12,8 +12,8 @@ defmodule Examples.Scene.TestScene do
     """
   end
 
-  def process_event({:value_changed, :dropdown, value}, _, scene) do
-    MyService.update(:dropdown_value, value)
+  def event({:value_changed, :dropdown, value}, _, scene) do
+    MyState.assign(dropdown_value: value)
     {:noreply, scene}
   end
 end

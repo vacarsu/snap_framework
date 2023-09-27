@@ -15,6 +15,7 @@ defmodule SnapFramework.Scene.Renderer do
     end
   end
 
+  @spec draw(Scenic.Scene.t()) :: Scenic.Scene.t()
   def draw(scene) do
     graph_list = apply(scene.assigns.module, :render, [scene.assigns])
 
@@ -35,6 +36,7 @@ defmodule SnapFramework.Scene.Renderer do
     |> Scenic.Scene.push_graph(graph)
   end
 
+  @spec draw(Scenic.Scene.t(), map) :: Scenic.Scene.t()
   def draw(scene, additional_assigns) do
     assigns = Map.merge(scene.assigns, additional_assigns)
     graph_list = apply(scene.assigns.module, :render, [assigns])

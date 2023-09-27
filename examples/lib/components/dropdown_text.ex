@@ -1,7 +1,7 @@
 defmodule Examples.Component.DropdownText do
   use SnapFramework.Component,
     name: :dropdown_text,
-    services: [Examples.Services.MyService]
+    state: [Examples.State.MyState]
 
   def render(assigns) do
     ~G"""

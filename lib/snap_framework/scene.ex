@@ -1,6 +1,4 @@
 defmodule SnapFramework.Scene do
-  require Logger
-
   @moduledoc ~S"""
   ## Overview
 
@@ -40,7 +38,7 @@ defmodule SnapFramework.Scene do
       \"""
     end
 
-    def process_event({:value_changed, :dropdown, value}, _, scene) do
+    def event({:value_changed, :dropdown, value}, _, scene) do
       {:noreply, assign(scene, dropdown_value: value)}
     end
   end
@@ -90,7 +88,7 @@ defmodule SnapFramework.Scene do
       \"""
     end
 
-    def process_event({:value_changed, :dropdown, value}, _, scene) do
+    def event({:value_changed, :dropdown, value}, _, scene) do
       {:noreply, assign(scene, dropdown_value: value)}
     end
   end
@@ -136,7 +134,7 @@ defmodule SnapFramework.Scene do
       \"""
     end
 
-    def process_event({:value_changed, :dropdown, value}, _, scene) do
+    def event({:value_changed, :dropdown, value}, _, scene) do
       {:noreply, assign(scene, dropdown_value: value)}
     end
   end
@@ -145,67 +143,67 @@ defmodule SnapFramework.Scene do
 
   @doc """
   Called when a scene receives a call message.
-  The returned state is diffed, and effects are run.
+  The returned state is diffed, and rerenders if changed.
   """
-  @callback process_call(term, GenServer.from(), Scene.t()) ::
+  @callback call(term, GenServer.from(), Scene.t()) ::
               {atom, term, Scene.t()}
               | {atom, Scene.t()}
 
   @doc """
   Called when a scene receives a message.
-  The returned state is diffed, and effects are run.
+  The returned state is diffed, and rerenders if changed.
   """
-  @callback process_info(any, Scene.t()) ::
+  @callback info(any, Scene.t()) ::
               {atom, Scene.t()}
 
   @doc """
   Called when a scene receives a cast message.
-  The returned state is diffed, and effects are run.
+  The returned state is diffed, and rerenders if changed.
   """
-  @callback process_cast(any, Scene.t()) ::
+  @callback cast(any, Scene.t()) ::
               {atom, Scene.t()}
 
   @doc """
   Called when a scene receives an input messsage.
-  The returned state is diffed, and effects are run.
+  The returned state is diffed, and rerenders if changed.
   """
-  @callback process_input(term, term, Scene.t()) ::
+  @callback input(term, term, Scene.t()) ::
               {atom, Scene.t()}
 
   @doc """
   Called when a scene receives an update message.
   Use this to update data and options on your state.
-  The returned state is diffed, and effects are run.
+  The returned state is diffed, and rerenders if changed.
   """
-  @callback process_update(term, List.t(), Scene.t()) ::
+  @callback update(term, List.t(), Scene.t()) ::
               {atom, Scene.t()}
 
   @doc """
   Called when a scene receives a get message.
   Use this to return data to the caller.
-  The returned state is diffed, and effects are run.
+  The returned state is diffed, and rerenders if changed.
   """
-  @callback process_get(GenServer.from(), Scene.t()) :: {atom, term, Scene.t()}
+  @callback get(GenServer.from(), Scene.t()) :: {atom, term, Scene.t()}
 
   @doc """
   Called when a scene receives a put message.
   Use this to update data on your state.
-  The returned state is diffed, and effects are run.
+  The returned state is diffed, and rerenders if changed.
   """
-  @callback process_put(term, Scene.t()) :: {atom, Scene.t()}
+  @callback put(term, Scene.t()) :: {atom, Scene.t()}
 
   @doc """
   Called when a scene receives a fetch message.
   Use this to return data to the caller.
-  The returned state is diffed, and effects are run.
+  The returned state is diffed, and rerenders if changed.
   """
-  @callback process_fetch(GenServer.from(), Scene.t()) :: {atom, term, Scene.t()}
+  @callback fetch(GenServer.from(), Scene.t()) :: {atom, term, Scene.t()}
 
   @doc """
   Called when a scene receives an event message.
-  The returned state is diffed, and effects are run.
+  The returned state is diffed, and rerenders if changed.
   """
-  @callback process_event(term, pid, Scene.t()) ::
+  @callback event(term, pid, Scene.t()) ::
               {atom, Scene.t()}
               | {atom, Scene.t(), list}
               | {atom, term, Scene.t()}
@@ -225,15 +223,15 @@ defmodule SnapFramework.Scene do
 
   @callback render(assign :: map) :: list()
 
-  @optional_callbacks process_call: 3,
-                      process_info: 2,
-                      process_cast: 2,
-                      process_input: 3,
-                      process_put: 2,
-                      process_get: 2,
-                      process_fetch: 2,
-                      process_update: 3,
-                      process_event: 3,
+  @optional_callbacks call: 3,
+                      info: 2,
+                      cast: 2,
+                      input: 3,
+                      put: 2,
+                      get: 2,
+                      fetch: 2,
+                      update: 3,
+                      event: 3,
                       setup: 1,
                       mount: 1,
                       render: 1
@@ -241,7 +239,7 @@ defmodule SnapFramework.Scene do
   @opts_schema [
     opts: [required: false, type: :any, default: []],
     type: [required: false, type: :atom, default: :scene],
-    services: [required: false, type: :any, default: []]
+    state: [required: false, type: :any, default: []]
   ]
 
   defmacro __before_compile__(_env) do
@@ -257,9 +255,9 @@ defmodule SnapFramework.Scene do
             opts: opts,
             children: opts[:children] || []
           )
-          |> subscribe_to_services(@services)
+          |> subscribe_to_states(@states)
           |> setup()
-          |> draw(@services)
+          |> draw(@states)
           |> mount()
 
         {:ok, scene}
@@ -269,8 +267,8 @@ defmodule SnapFramework.Scene do
         SnapFramework.Scene.Renderer.draw(scene)
       end
 
-      defp draw(scene, services) do
-        additional_assigns = fetch_services_data(services)
+      defp draw(scene, states) do
+        additional_assigns = fetch_states_data(states)
 
         SnapFramework.Scene.Renderer.draw(scene, additional_assigns)
       end
@@ -279,8 +277,8 @@ defmodule SnapFramework.Scene do
         SnapFramework.Scene.Renderer.maybe_render(old_scene, new_scene, @assigns_to_track)
       end
 
-      defp redraw(old_scene, new_scene, services) do
-        additional_assigns = fetch_services_data(services)
+      defp redraw(old_scene, new_scene, states) do
+        additional_assigns = fetch_states_data(states)
 
         SnapFramework.Scene.Renderer.maybe_render(
           old_scene,
@@ -290,21 +288,19 @@ defmodule SnapFramework.Scene do
         )
       end
 
-      defp subscribe_to_services(scene, nil) do
+      defp subscribe_to_states(scene, nil) do
         scene
       end
 
-      defp subscribe_to_services(scene, services) do
-        Enum.each(services, fn service ->
-          Scenic.PubSub.subscribe(service)
-        end)
+      defp subscribe_to_states(scene, states) do
+        Enum.each(states, &Scenic.PubSub.subscribe/1)
 
         scene
       end
 
-      defp fetch_services_data(services) do
-        Enum.reduce(services, %{}, fn service, acc ->
-          Map.merge(acc, service.fetch())
+      defp fetch_states_data(states) do
+        Enum.reduce(states, %{}, fn state, acc ->
+          Map.merge(acc, state.get())
         end)
       end
     end
@@ -314,7 +310,7 @@ defmodule SnapFramework.Scene do
     case NimbleOptions.validate(opts, @opts_schema) do
       {:ok, opts} ->
         quote do
-          @services unquote(opts[:services])
+          @states unquote(opts[:state])
           unquote(prelude(opts))
           unquote(deps())
           unquote(defs())
@@ -343,7 +339,6 @@ defmodule SnapFramework.Scene do
 
   defp deps() do
     quote do
-      require IEx
       import SnapFramework.Scene
       import SnapFramework.Scene.Helpers
     end
@@ -355,19 +350,19 @@ defmodule SnapFramework.Scene do
       def setup(scene), do: scene
       def mount(scene), do: scene
       def terminate(_, scene), do: {:noreply, scene}
-      def process_call(_msg, _from, scene), do: {:reply, scene, scene}
-      def process_info(_msg, scene), do: {:noreply, scene}
-      def process_cast(_msg, scene), do: {:noreply, scene}
-      def process_input(_input, _id, scene), do: {:noreply, scene}
-      def process_event(event, _from_pid, scene), do: {:cont, event, scene}
+      def call(_msg, _from, scene), do: {:reply, scene, scene}
+      def info(_msg, scene), do: {:noreply, scene}
+      def cast(_msg, scene), do: {:noreply, scene}
+      def input(_input, _id, scene), do: {:noreply, scene}
+      def event(event, _from_pid, scene), do: {:cont, event, scene}
 
-      def process_put({k, v}, scene),
+      def put({k, v}, scene),
         do: {:noreply, assign(scene, Keyword.put_new(Keyword.new(), k, v))}
 
-      def process_get(_, scene), do: {:reply, scene, scene}
-      def process_fetch(_, scene), do: {:reply, scene, scene}
+      def get(_, scene), do: {:reply, scene, scene}
+      def fetch(_, scene), do: {:reply, scene, scene}
 
-      def process_update(data, opts, scene) do
+      def update(data, opts, scene) do
         {:noreply, assign(scene, data: data, opts: Keyword.merge(scene.assigns.opts, opts))}
       end
 
@@ -375,67 +370,67 @@ defmodule SnapFramework.Scene do
 
       defoverridable setup: 1,
                      mount: 1,
-                     process_call: 3,
-                     process_info: 2,
-                     process_cast: 2,
-                     process_input: 3,
-                     process_put: 2,
-                     process_get: 2,
-                     process_fetch: 2,
-                     process_update: 3,
-                     process_event: 3
+                     call: 3,
+                     info: 2,
+                     cast: 2,
+                     input: 3,
+                     put: 2,
+                     get: 2,
+                     fetch: 2,
+                     update: 3,
+                     event: 3
     end
   end
 
   defp scene_handlers() do
     quote do
       def handle_input(input, id, scene) do
-        {response_type, new_scene} = scene.module.process_input(input, id, scene)
+        {response_type, new_scene} = scene.module.input(input, id, scene)
 
-        {response_type, redraw(scene, new_scene, @services)}
+        {response_type, redraw(scene, new_scene, @states)}
       end
 
-      def handle_info({{Scenic.PubSub, :data}, {_, {:state, state}, _}}, scene) do
-        {:noreply, redraw(scene, scene, @services)}
+      def handle_info({{Scenic.PubSub, :data}, {_, {:assigns, assigns}, _}}, scene) do
+        {:noreply, redraw(scene, scene, @states)}
       end
 
       def handle_info(msg, scene) do
-        {response_type, new_scene} = scene.module.process_info(msg, scene)
+        {response_type, new_scene} = scene.module.info(msg, scene)
 
-        {response_type, redraw(scene, new_scene, @services)}
+        {response_type, redraw(scene, new_scene, @states)}
       end
 
       def handle_cast(msg, scene) do
-        {response_type, new_scene} = scene.module.process_cast(msg, scene)
+        {response_type, new_scene} = scene.module.cast(msg, scene)
 
-        {response_type, redraw(scene, new_scene, @services)}
+        {response_type, redraw(scene, new_scene, @states)}
       end
 
       def handle_call(msg, from, scene) do
-        {response_type, res, new_scene} = scene.module.process_call(msg, from, scene)
+        {response_type, res, new_scene} = scene.module.call(msg, from, scene)
 
-        {response_type, res, redraw(scene, new_scene, @services)}
+        {response_type, res, redraw(scene, new_scene, @states)}
       end
 
       def handle_update(msg, opts, scene) do
-        {response_type, new_scene} = scene.module.process_update(msg, opts, scene)
+        {response_type, new_scene} = scene.module.update(msg, opts, scene)
 
-        {response_type, redraw(scene, new_scene, @services)}
+        {response_type, redraw(scene, new_scene, @states)}
       end
 
       def handle_event(event, from_pid, scene) do
-        case scene.module.process_event(event, from_pid, scene) do
+        case scene.module.event(event, from_pid, scene) do
           {:cont, event, new_scene} ->
-            {:cont, event, redraw(scene, new_scene, @services)}
+            {:cont, event, redraw(scene, new_scene, @states)}
 
           {:cont, event, new_scene, opts} ->
-            {:cont, event, redraw(scene, new_scene, @services), opts}
+            {:cont, event, redraw(scene, new_scene, @states), opts}
 
           {res, new_scene} ->
-            {res, redraw(scene, new_scene, @services)}
+            {res, redraw(scene, new_scene, @states)}
 
           {res, new_scene, opts} ->
-            {res, redraw(scene, new_scene, @services), opts}
+            {res, redraw(scene, new_scene, @states), opts}
 
           response ->
             response

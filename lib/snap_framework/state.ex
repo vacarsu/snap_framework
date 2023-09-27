@@ -1,15 +1,15 @@
-defmodule SnapFramework.Service do
+defmodule SnapFramework.State do
   @moduledoc """
   ## Overview
 
-  SnapFramework.Service is a behaviour that can be used to share global app state
+  SnapFramework.State is a behaviour that can be used to share global app state
   across your components without needing to save copies of the state within every scene.
 
   ## Usage
 
   ``` elixir
-  defmodule Examples.Services.MyService do
-    use SnapFramework.Service
+  defmodule Examples.States.MyState do
+    use SnapFramework.State
 
     def setup(state) do
       %{
@@ -23,7 +23,7 @@ defmodule SnapFramework.Service do
     end
   end
 
-  defmodule Examples.Services.Supervisor do
+  defmodule Examples.States.Supervisor do
     use Supervisor
 
     def start_link(_) do
@@ -32,7 +32,7 @@ defmodule SnapFramework.Service do
 
     def init(_) do
       children = [
-        Examples.Services.MyService
+        Examples.States.MyState
       ]
 
       Supervisor.init(children, strategy: :one_for_one)
@@ -47,7 +47,7 @@ defmodule SnapFramework.Service do
       # start the application with the viewport
       children = [
         {Scenic, [main_viewport_config]},
-        Examples.Services.Supervisor
+        Examples.States.Supervisor
       ]
 
       Supervisor.start_link(children, strategy: :one_for_one)
@@ -55,13 +55,13 @@ defmodule SnapFramework.Service do
   end
   ```
 
-  With that ceremony out of the way, you can now use the service in your scenes:
+  With that ceremony out of the way, you can now use the state in your scenes:
 
   ``` elixir
   defmodule Examples.Scene.TestScene do
-    use SnapFramework.Scene, services: [Examples.Services.MyService] # <-- add the service here
+    use SnapFramework.Scene, States: [Examples.States.MyState] # <-- add the state here
 
-    alias Examples.Services.MyService
+    alias Examples.States.MyState
 
     def render(assigns) do
       ~G\"""
@@ -82,12 +82,16 @@ defmodule SnapFramework.Service do
     end
 
     def process_event({:value_changed, :dropdown, value}, _, scene) do
-      MyService.update(:dropdown_value, value) # <-- update the service values here
+      MyState.update(:dropdown_value, value) # <-- update the state values here
       {:noreply, scene}
     end
   end
   ```
   """
+  import Scenic.PubSub
+
+  defstruct __meta__: %{},
+            assigns: %{}
 
   @callback setup(any) :: any
 
@@ -95,20 +99,23 @@ defmodule SnapFramework.Service do
 
   defmacro __using__(_) do
     quote do
-      @behaviour SnapFramework.Service
+      @behaviour SnapFramework.State
       use GenServer
-      import SnapFramework.Service
+      import SnapFramework.State
       import Scenic.PubSub
 
-      @service __MODULE__
+      @name __MODULE__
 
-      def start_link(opts) do
-        GenServer.start_link(@service, opts, name: @service)
+      def start_link(_) do
+        GenServer.start_link(
+          @name,
+          %SnapFramework.State{__meta__: %{name: @name}, assigns: %{}},
+          name: @name
+        )
       end
 
       def init(state) do
-        Scenic.PubSub.register(@service)
-
+        register(@name)
         {:ok, setup(state)}
       end
 
@@ -116,34 +123,25 @@ defmodule SnapFramework.Service do
         state
       end
 
-      def fetch() do
-        GenServer.call(@service, :fetch)
+      def get() do
+        get(@name)
       end
 
-      def update(key, val) do
-        GenServer.cast(@service, {:update, {key, val}})
+      def assign(key_vals) do
+        assign(@name, key_vals)
       end
 
       def handle_info(msg, state) do
-        Scenic.PubSub.publish(@service, {:state, state})
-
-        {:noreply, state}
-      end
-
-      def handle_cast({:update, {key, value}}, state) do
-        state = Map.put(state, key, value)
-        Scenic.PubSub.publish(@service, {:state, state})
-
         {:noreply, state}
       end
 
       def handle_cast(msg, state) do
-        Scenic.PubSub.publish(@service, {:state, state})
-
         {:noreply, state}
       end
 
-      def handle_call(:fetch, from, state) do
+      def handle_call({:assign, key_vals}, _, state) do
+        state = assign(state, key_vals)
+
         {:reply, state, state}
       end
 
@@ -151,7 +149,21 @@ defmodule SnapFramework.Service do
         {:reply, state, state}
       end
 
-      defoverridable setup: 1
+      defoverridable setup: 1, handle_info: 2, handle_cast: 2, handle_call: 3
     end
+  end
+
+  def assign(name, key_vals) when is_atom(name) do
+    GenServer.call(name, {:assign, key_vals})
+  end
+
+  def assign(%__MODULE__{__meta__: %{name: name}, assigns: assigns} = state, key_vals) do
+    assigns =
+      Enum.reduce(key_vals, assigns, fn {key, val}, acc ->
+        Map.put(acc, key, val)
+      end)
+
+    publish(name, assigns)
+    %__MODULE__{state | assigns: assigns}
   end
 end

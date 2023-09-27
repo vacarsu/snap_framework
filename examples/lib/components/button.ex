@@ -9,11 +9,11 @@ defmodule Examples.Component.Button do
   end
 
   @impl true
-  def process_event({:click, :btn}, _, scene) do
+  def event({:click, :btn}, _, scene) do
     {:noreply, assign(scene, button_text: "clicked")}
   end
 
-  def process_event(_, _, scene) do
+  def event(_, _, scene) do
     {:noreply, scene}
   end
 
