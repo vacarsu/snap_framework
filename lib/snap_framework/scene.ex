@@ -233,8 +233,7 @@ defmodule SnapFramework.Scene do
                       update: 3,
                       event: 3,
                       setup: 1,
-                      mount: 1,
-                      render: 1
+                      mount: 1
 
   @opts_schema [
     opts: [required: false, type: :any, default: []],
@@ -246,6 +245,7 @@ defmodule SnapFramework.Scene do
     caller = __CALLER__
 
     quote do
+      @impl Scenic.Scene
       def init(scene, data, opts) do
         scene =
           scene
@@ -263,6 +263,7 @@ defmodule SnapFramework.Scene do
         {:ok, scene}
       end
 
+      @spec draw(Scene.t(), list()) :: Scene.t()
       defp draw(scene, nil) do
         SnapFramework.Scene.Renderer.draw(scene)
       end
@@ -273,6 +274,7 @@ defmodule SnapFramework.Scene do
         SnapFramework.Scene.Renderer.draw(scene, additional_assigns)
       end
 
+      @spec redraw(Scene.t(), Scene.t(), nil | list()) :: Scene.t()
       defp redraw(old_scene, new_scene, nil) do
         SnapFramework.Scene.Renderer.maybe_render(old_scene, new_scene, @assigns_to_track)
       end
@@ -288,6 +290,7 @@ defmodule SnapFramework.Scene do
         )
       end
 
+      @spec subscribe_to_states(Scene.t(), nil | list()) :: Scene.t()
       defp subscribe_to_states(scene, nil) do
         scene
       end
@@ -298,6 +301,7 @@ defmodule SnapFramework.Scene do
         scene
       end
 
+      @spec fetch_states_data(list()) :: map()
       defp fetch_states_data(states) do
         Enum.reduce(states, %{}, fn state, acc ->
           Map.merge(acc, state.get())
@@ -349,22 +353,11 @@ defmodule SnapFramework.Scene do
       @before_compile SnapFramework.Scene
       def setup(scene), do: scene
       def mount(scene), do: scene
-      def terminate(_, scene), do: {:noreply, scene}
       def call(_msg, _from, scene), do: {:reply, scene, scene}
       def info(_msg, scene), do: {:noreply, scene}
       def cast(_msg, scene), do: {:noreply, scene}
       def input(_input, _id, scene), do: {:noreply, scene}
       def event(event, _from_pid, scene), do: {:cont, event, scene}
-
-      def put({k, v}, scene),
-        do: {:noreply, assign(scene, Keyword.put_new(Keyword.new(), k, v))}
-
-      def get(_, scene), do: {:reply, scene, scene}
-      def fetch(_, scene), do: {:reply, scene, scene}
-
-      def update(data, opts, scene) do
-        {:noreply, assign(scene, data: data, opts: Keyword.merge(scene.assigns.opts, opts))}
-      end
 
       unquote(scene_handlers())
 
@@ -374,50 +367,53 @@ defmodule SnapFramework.Scene do
                      info: 2,
                      cast: 2,
                      input: 3,
-                     put: 2,
-                     get: 2,
-                     fetch: 2,
-                     update: 3,
                      event: 3
     end
   end
 
   defp scene_handlers() do
     quote do
+      @impl true
       def handle_input(input, id, scene) do
         {response_type, new_scene} = scene.module.input(input, id, scene)
 
         {response_type, redraw(scene, new_scene, @states)}
       end
 
-      def handle_info({{Scenic.PubSub, :data}, {_, {:assigns, assigns}, _}}, scene) do
+      @impl true
+      def handle_info({{Scenic.PubSub, :data}, {_, assigns, _}}, scene) do
         {:noreply, redraw(scene, scene, @states)}
       end
 
+      @impl true
       def handle_info(msg, scene) do
         {response_type, new_scene} = scene.module.info(msg, scene)
 
         {response_type, redraw(scene, new_scene, @states)}
       end
 
+      @impl true
       def handle_cast(msg, scene) do
         {response_type, new_scene} = scene.module.cast(msg, scene)
 
         {response_type, redraw(scene, new_scene, @states)}
       end
 
+      @impl true
       def handle_call(msg, from, scene) do
         {response_type, res, new_scene} = scene.module.call(msg, from, scene)
 
         {response_type, res, redraw(scene, new_scene, @states)}
       end
 
+      @impl true
       def handle_update(msg, opts, scene) do
         {response_type, new_scene} = scene.module.update(msg, opts, scene)
 
         {response_type, redraw(scene, new_scene, @states)}
       end
 
+      @impl true
       def handle_event(event, from_pid, scene) do
         case scene.module.event(event, from_pid, scene) do
           {:cont, event, new_scene} ->

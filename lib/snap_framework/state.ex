@@ -90,7 +90,12 @@ defmodule SnapFramework.State do
   """
   import Scenic.PubSub
 
-  defstruct __meta__: %{},
+  @type t :: %__MODULE__{
+          meta: %{name: atom()},
+          assigns: %{atom() => any()}
+        }
+
+  defstruct meta: %{name: nil},
             assigns: %{}
 
   @callback setup(any) :: any
@@ -109,55 +114,49 @@ defmodule SnapFramework.State do
       def start_link(_) do
         GenServer.start_link(
           @name,
-          %SnapFramework.State{__meta__: %{name: @name}, assigns: %{}},
+          %SnapFramework.State{meta: %{name: @name}, assigns: %{}},
           name: @name
         )
       end
 
+      @impl true
       def init(state) do
         register(@name)
         {:ok, setup(state)}
       end
 
+      @impl true
+      @spec setup(State.t()) :: State.t()
       def setup(state) do
+        publish(@name, state.assigns)
         state
       end
 
+      @spec get() :: any()
       def get() do
         get(@name)
       end
 
+      @spec assign(map() | Keyword.t()) :: State.t()
       def assign(key_vals) do
         assign(@name, key_vals)
       end
 
-      def handle_info(msg, state) do
-        {:noreply, state}
-      end
-
-      def handle_cast(msg, state) do
-        {:noreply, state}
-      end
-
+      @impl true
       def handle_call({:assign, key_vals}, _, state) do
-        state = assign(state, key_vals)
-
-        {:reply, state, state}
+        {:reply, state, assign(state, key_vals)}
       end
 
-      def handle_call(msg, from, state) do
-        {:reply, state, state}
-      end
-
-      defoverridable setup: 1, handle_info: 2, handle_cast: 2, handle_call: 3
+      defoverridable setup: 1
     end
   end
 
+  @spec assign(atom() | t(), map() | Keyword.t()) :: t()
   def assign(name, key_vals) when is_atom(name) do
     GenServer.call(name, {:assign, key_vals})
   end
 
-  def assign(%__MODULE__{__meta__: %{name: name}, assigns: assigns} = state, key_vals) do
+  def assign(%__MODULE__{meta: %{name: name}, assigns: assigns} = state, key_vals) do
     assigns =
       Enum.reduce(key_vals, assigns, fn {key, val}, acc ->
         Map.put(acc, key, val)

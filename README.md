@@ -3,7 +3,7 @@
 Add Snap to your application.
 
 ``` elixir
-{:snap_framework, "~> 0.2.0-beta.2"}
+{:snap_framework, "~> 0.3.0-beta"}
 ```
 
 Inital setup is the same as any Scenic app.
@@ -143,7 +143,7 @@ Inital setup is the same as any Scenic app.
       """
     end
 
-    def process_event({:value_changed, :dropdown, value}, _, scene) do
+    def event({:value_changed, :dropdown, value}, _, scene) do
       {:noreply, assign(scene, dropdown_value: value)}
     end
   end
@@ -312,13 +312,3 @@ Inital setup is the same as any Scenic app.
     end
   end
   ```
-
-## Caveats
-
-  ### IDs
-
-  The the above you may have noticed ids were used on every primitive/component in a template. SnapFramework has this requirement that every "element" have a unique id due to how Scenic handles rebuilds of graphs. Scenic assigns unique ids to scenes which are used to determine whether or not a scene should be taken down or not among other things. This means when SnapFramework rebuilds a graph scenic will take down the entire tree of genservers then start them back up due to the reassignation of unique ids. This leads to sever performance issues as well as errors when trying to send messages to genservers that are still reinitializing.
-
-  SnapFramework works around this by requiring unique ids on every element to reassign the old scene uids back onto the rebuilt graph. This means that if you have a component that is used in multiple places you will need to provide a unique id for each instance of that component. This is a bit of a pain, but it is the only way to get around the performance issues and errors.
-
-  I am open to suggestions on how to improve this.

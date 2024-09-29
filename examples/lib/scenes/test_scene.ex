@@ -8,12 +8,9 @@ defmodule Examples.Scene.TestScene do
     ~G"""
     <%= graph font_size: 20 %>
 
-    <%= component DropdownText, nil %>
-    """
-  end
+    <%= component Scenic.Component.Button, "text", id: :btn_test %>
 
-  def event({:value_changed, :dropdown, value}, _, scene) do
-    MyState.assign(dropdown_value: value)
-    {:noreply, scene}
+    <%= component DropdownText, nil, translate: {50, 50} %>
+    """
   end
 end

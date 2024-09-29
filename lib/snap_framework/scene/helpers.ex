@@ -4,14 +4,14 @@ defmodule SnapFramework.Scene.Helpers do
       raise "~G requires a variable named \"assigns\" to exist and be set to a map"
     end
 
-    SnapFramework.Engine.Compiler.compile_string(
+    EEx.compile_string(
       expr,
       engine: SnapFramework.Engine,
       file: __CALLER__.file,
       line: __CALLER__.line,
       caller: __CALLER__,
       indentation: meta[:indentation] || 0,
-      trim: true
+      source: expr
     )
   end
 end

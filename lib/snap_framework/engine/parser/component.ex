@@ -31,12 +31,14 @@ defmodule SnapFramework.Engine.Parser.Component do
       block
       |> Enum.reduce([], &build_child_list/2)
 
+    opts = Keyword.put_new([], :ref, to_string(:erlang.ref_to_list(:erlang.make_ref())))
+
     quote line: meta[:line] || 0 do
       [
         type: :component,
         module: unquote(name),
         data: unquote(data),
-        opts: [],
+        opts: unquote(opts),
         children: unquote(children)
       ]
     end

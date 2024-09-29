@@ -85,6 +85,9 @@ defmodule SnapFramework.Engine do
     }
   end
 
+  def tokenize() do
+  end
+
   @doc false
   def handle_begin(state) do
     %{state | iodata: [], dynamic: []}
@@ -111,7 +114,8 @@ defmodule SnapFramework.Engine do
   @doc false
   def handle_text(state, _meta, text) do
     %{iodata: iodata} = state
-    %{state | iodata: [text | iodata]}
+    ast = traverse(text, state)
+    %{state | iodata: [ast | iodata]}
   end
 
   @doc false
