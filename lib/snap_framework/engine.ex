@@ -85,9 +85,6 @@ defmodule SnapFramework.Engine do
     }
   end
 
-  def tokenize() do
-  end
-
   @doc false
   def handle_begin(state) do
     %{state | iodata: [], dynamic: []}
