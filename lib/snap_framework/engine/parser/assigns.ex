@@ -13,9 +13,7 @@ defmodule SnapFramework.Engine.Parser.Assigns do
   end
 
   defp parse({:@, meta, [{name, _, _atom}]}, state) do
-    Module.put_attribute(state.caller.module, :assigns_to_track, [
-      name | Module.get_attribute(state.caller.module, :assigns_to_track)
-    ])
+    register_assigns(name, state.caller.module)
 
     quote line: meta[:line] || 0 do
       var!(assigns)[unquote(name)]
@@ -23,4 +21,12 @@ defmodule SnapFramework.Engine.Parser.Assigns do
   end
 
   defp parse(ast, _state), do: ast
+
+  defp register_assigns(assign_name, target_module) do
+    tracked_assigns = Module.get_attribute(target_module, :assigns_to_track)
+
+    if assign_name not in tracked_assigns do
+      Module.put_attribute(target_module, :assigns_to_track, [assign_name | tracked_assigns])
+    end
+  end
 end

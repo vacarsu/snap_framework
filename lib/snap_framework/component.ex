@@ -65,6 +65,7 @@ defmodule SnapFramework.Component do
   @opts_schema [
     name: [required: true, type: :atom],
     type: [required: false, type: :atom, default: nil],
+    state: [required: false, type: :any, default: []],
     opts: [required: false, type: :any]
   ]
 
@@ -72,10 +73,10 @@ defmodule SnapFramework.Component do
     case NimbleOptions.validate(opts, @opts_schema) do
       {:ok, opts} ->
         quote do
-          unquote(prelude())
+          unquote(prelude(opts))
           unquote(deps())
           unquote(defs())
-          unquote(defcmp(opts))
+          unquote(helpers(opts))
         end
 
       {:error, error} ->
@@ -83,9 +84,11 @@ defmodule SnapFramework.Component do
     end
   end
 
-  defp prelude() do
+  defp prelude(opts) do
     quote do
-      use SnapFramework.Scene, type: :component
+      use SnapFramework.Scene,
+        type: :component,
+        state: unquote(opts[:state])
     end
   end
 
@@ -99,11 +102,10 @@ defmodule SnapFramework.Component do
   defp defs() do
     quote do
       Module.register_attribute(__MODULE__, :assigns, persist: true)
-      Module.register_attribute(__MODULE__, :preload, persist: true)
     end
   end
 
-  defp defcmp(opts) do
+  defp helpers(opts) do
     name = opts[:name]
     data_type = opts[:type]
 

@@ -26,6 +26,10 @@ defmodule SnapFramework.Engine.Compiler.Scrubber do
     acc
   end
 
+  defp scrub_item("\n\n", acc) do
+    acc
+  end
+
   defp scrub_item("\n", acc) do
     acc
   end

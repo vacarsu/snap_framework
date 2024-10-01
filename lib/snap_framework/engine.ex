@@ -111,7 +111,8 @@ defmodule SnapFramework.Engine do
   @doc false
   def handle_text(state, _meta, text) do
     %{iodata: iodata} = state
-    %{state | iodata: [text | iodata]}
+    ast = traverse(text, state)
+    %{state | iodata: [ast | iodata]}
   end
 
   @doc false

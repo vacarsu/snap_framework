@@ -9,6 +9,8 @@ defmodule SnapFramework.Engine.Parser.Primitive do
   end
 
   defp parse({:primitive, meta, [name, data, opts]}) do
+    opts = Keyword.put_new(opts, :ref, to_string(:erlang.ref_to_list(:erlang.make_ref())))
+
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -31,6 +33,8 @@ defmodule SnapFramework.Engine.Parser.Primitive do
   end
 
   defp parse({:text, meta, [data, opts]}) do
+    opts = Keyword.put_new(opts, :ref, to_string(:erlang.ref_to_list(:erlang.make_ref())))
+
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -53,6 +57,8 @@ defmodule SnapFramework.Engine.Parser.Primitive do
   end
 
   defp parse({:rect, meta, [data, opts]}) do
+    opts = Keyword.put_new(opts, :ref, to_string(:erlang.ref_to_list(:erlang.make_ref())))
+
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -75,6 +81,8 @@ defmodule SnapFramework.Engine.Parser.Primitive do
   end
 
   defp parse({:rectangle, meta, [data, opts]}) do
+    opts = Keyword.put_new(opts, :ref, to_string(:erlang.ref_to_list(:erlang.make_ref())))
+
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -97,6 +105,8 @@ defmodule SnapFramework.Engine.Parser.Primitive do
   end
 
   defp parse({:rrect, meta, [data, opts]}) do
+    opts = Keyword.put_new(opts, :ref, to_string(:erlang.ref_to_list(:erlang.make_ref())))
+
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -119,6 +129,8 @@ defmodule SnapFramework.Engine.Parser.Primitive do
   end
 
   defp parse({:rounded_rectangle, meta, [data, opts]}) do
+    opts = Keyword.put_new(opts, :ref, to_string(:erlang.ref_to_list(:erlang.make_ref())))
+
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -141,6 +153,8 @@ defmodule SnapFramework.Engine.Parser.Primitive do
   end
 
   defp parse({:circle, meta, [data, opts]}) do
+    opts = Keyword.put_new(opts, :ref, to_string(:erlang.ref_to_list(:erlang.make_ref())))
+
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -163,6 +177,8 @@ defmodule SnapFramework.Engine.Parser.Primitive do
   end
 
   defp parse({:line, meta, data, [data, opts]}) do
+    opts = Keyword.put_new(opts, :ref, to_string(:erlang.ref_to_list(:erlang.make_ref())))
+
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -185,6 +201,8 @@ defmodule SnapFramework.Engine.Parser.Primitive do
   end
 
   defp parse({:arc, meta, [data, opts]}) do
+    opts = Keyword.put_new(opts, :ref, to_string(:erlang.ref_to_list(:erlang.make_ref())))
+
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -207,6 +225,8 @@ defmodule SnapFramework.Engine.Parser.Primitive do
   end
 
   defp parse({:triangle, meta, [data, opts]}) do
+    opts = Keyword.put_new(opts, :ref, to_string(:erlang.ref_to_list(:erlang.make_ref())))
+
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -229,6 +249,8 @@ defmodule SnapFramework.Engine.Parser.Primitive do
   end
 
   defp parse({:ellipse, meta, [data, opts]}) do
+    opts = Keyword.put_new(opts, :ref, to_string(:erlang.ref_to_list(:erlang.make_ref())))
+
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -251,6 +273,8 @@ defmodule SnapFramework.Engine.Parser.Primitive do
   end
 
   defp parse({:quad, meta, [data, opts]}) do
+    opts = Keyword.put_new(opts, :ref, to_string(:erlang.ref_to_list(:erlang.make_ref())))
+
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
@@ -273,6 +297,8 @@ defmodule SnapFramework.Engine.Parser.Primitive do
   end
 
   defp parse({:sector, meta, [data, opts]}) do
+    opts = Keyword.put_new(opts, :ref, to_string(:erlang.ref_to_list(:erlang.make_ref())))
+
     quote line: meta[:line] || 0 do
       [
         type: :primitive,
